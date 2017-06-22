@@ -20,7 +20,7 @@ namespace VirtualDiskFAT
         public List<Directory> listaRootDirectory = new List<Directory>();
         public List<Directory> listaDirectorioActual = new List<Directory>();
         Directory carpetaActual = new Directory();
-        
+        long posicionCarpetaActual = new long();
         public decodedMBR tablaMBR = new decodedMBR();
         public int mbrOffset = 512;
         public long inicioTablaFat1 = new long();
@@ -52,7 +52,6 @@ namespace VirtualDiskFAT
                 tamanioCluster = tablaMBR.bytesxSector * tablaMBR.sectorxCluster;
                 cargarViewGeneral(true);
             }
-
         }
         private void btnAgregar_Click(object sender, EventArgs e)
         {
@@ -163,7 +162,7 @@ namespace VirtualDiskFAT
                 else
                 {
                     Directory Carpeta = new Directory();
-                    Carpeta.nuevaCarpeta(nombreCarpeta, DateTime.Now);
+                    Carpeta.nuevaCarpeta(null,nombreCarpeta, DateTime.Now);
                     crearCarpetaEnRoot(Carpeta);
 
                     leerRootDirectory();
@@ -192,7 +191,7 @@ namespace VirtualDiskFAT
                 else
                 {
                     Directory Carpeta = new Directory();
-                    Carpeta.nuevaCarpeta(nombreCarpeta, DateTime.Now);
+                    Carpeta.nuevaCarpeta(carpetaActual,nombreCarpeta, DateTime.Now);
                     crearCarpeta(Carpeta);
                     actualizarCarpetaActual();
                     cargarViewGeneral(false);
@@ -230,10 +229,10 @@ namespace VirtualDiskFAT
             string[] prop = seleccionado.Tag.ToString().Split(',');
             if (prop[0] == "D") //obtiene datos del directorio guardados en el listviewitem, si es una carpeta entonces
             {
-                
                 if (viewRootDirectory) //si estoy en el root 
                 {
                     string nombreCarpeta = seleccionado.SubItems[0].Text;
+                    
                     Directory carpeta = listaRootDirectory.Where(x => Encoding.ASCII.GetString(x.filename) == nombreCarpeta).FirstOrDefault();
                    
                     carpetaActual = leerEntradaDirectorio(posicionByteCluster(carpeta.startingCluster));
@@ -247,7 +246,7 @@ namespace VirtualDiskFAT
                 {
                     if (seleccionado == viewGeneral.Items[0])
                     {
-                        if (carpetaActual.startingCluster == 1)
+                        if (carpetaActual.Padre == null)
                         {
                             carpetaActual = new Directory();
                             lblFolder.Text = "Carpeta Actual: Root";
@@ -256,7 +255,7 @@ namespace VirtualDiskFAT
                         }
                         else
                         {
-                            carpetaActual = leerEntradaDirectorio(posicionByteCluster(carpetaActual.startingCluster));
+                            carpetaActual = carpetaActual.Padre;
                             actualizarCarpetaActual();
                             lblFolder.Text = "Carpeta Actual: " + Encoding.ASCII.GetString(carpetaActual.filename);
                             cargarViewGeneral(false);
@@ -265,7 +264,9 @@ namespace VirtualDiskFAT
                     else
                     {
                         string nombreCarpeta = seleccionado.SubItems[0].Text;
-                        carpetaActual = listaDirectorioActual.Where(x => Encoding.ASCII.GetString(x.filename) == nombreCarpeta).FirstOrDefault();
+                        Directory carpeta = listaDirectorioActual.Where(x => Encoding.ASCII.GetString(x.filename) == nombreCarpeta).FirstOrDefault();
+                        
+                        carpetaActual = leerEntradaDirectorio(posicionByteCluster(carpeta.Padre.startingCluster));
                         actualizarCarpetaActual();
                         lblFolder.Text = "Carpeta Actual: " + Encoding.ASCII.GetString(carpetaActual.filename);
                         cargarViewGeneral(false);
@@ -395,9 +396,10 @@ namespace VirtualDiskFAT
             List<Directory> listaDirectorios = new List<Directory>();
 
             if (!isRoot) {
-                string[] info = { "..","",""};
+                // carpetaActual.Padre.posicionByte.ToString()
+                string[] info = { ".."+ Encoding.ASCII.GetString(carpetaActual.filename), "", carpetaActual.posicionByte.ToString() };
                 ListViewItem nod = new ListViewItem(info, 0);
-                nod.Tag = "D," + "";
+                nod.Tag = "D," + carpetaActual.posicionByte;
                 viewGeneral.Items.Add(nod);
                 viewRootDirectory = false;
                 listaDirectorios = listaDirectorioActual;
@@ -465,10 +467,13 @@ namespace VirtualDiskFAT
         {
             carpetaActual.subDirectorio.Clear();
             long posicion = carpetaActual.posicionByte;
+            carpetaActual.Padre = new Directory();
             using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
             {
-                reader.BaseStream.Position = posicion+32;
-                int limiteCluster = (tamanioCluster - 32) / 2;
+                reader.BaseStream.Position = posicion + 26;
+                carpetaActual.Padre.startingCluster = reader.ReadUInt16();
+                reader.BaseStream.Position = reader.BaseStream.Position + 2;
+                int limiteCluster = (tamanioCluster - 64) / 2;
                 for (int j = 0; j < limiteCluster; j++)
                 {
                     ushort apuntadorFAT = reader.ReadUInt16();
@@ -525,10 +530,25 @@ namespace VirtualDiskFAT
                     stream.Write(nuevaCarpeta.reservedFAT32);
                     stream.Write(nuevaCarpeta.hora_ultimaEscritura);
                     stream.Write(nuevaCarpeta.fecha_ultimaEscritura);
-                    stream.Write(nuevaCarpeta.startingCluster);
+                    ushort clusterDirectorio = new ushort();
+                    stream.Write(clusterDirectorio);
                     stream.Write(nuevaCarpeta.fileSize);
 
-                    int limiteCluster = (tamanioCluster - 32) / 2;
+                    stream.Write(nuevaCarpeta.filename);
+                    stream.Write(nuevaCarpeta.filenameExt);
+                    stream.Write(nuevaCarpeta.fileAttributes);
+                    stream.Write(nuevaCarpeta.NT);
+                    stream.Write(nuevaCarpeta.millisegundos_Creado);
+                    stream.Write(nuevaCarpeta.hora_Creado);
+                    stream.Write(nuevaCarpeta.fecha_Creado);
+                    stream.Write(nuevaCarpeta.fecha_ultimoAcceso);
+                    stream.Write(nuevaCarpeta.reservedFAT32);
+                    stream.Write(nuevaCarpeta.hora_ultimaEscritura);
+                    stream.Write(nuevaCarpeta.fecha_ultimaEscritura);
+                    stream.Write(clusterSubCarpeta);
+                    stream.Write(nuevaCarpeta.fileSize);
+
+                    int limiteCluster = (tamanioCluster - 64) / 2;
                     for(int i = 0; i < limiteCluster; i++)
                     {
                         ushort apuntadorFAT = 0;
@@ -591,24 +611,25 @@ namespace VirtualDiskFAT
             if (cluster > 0)
             {
                 long posicionByte = posicionByteCluster(cluster);
-                nuevaCarpeta.startingCluster = carpetaActual.startingCluster;
+                nuevaCarpeta.startingCluster = cluster;
                 using (BinaryWriter stream = new BinaryWriter(File.Open(frmMain.discoDefault, FileMode.Open)))
                 {
                     stream.BaseStream.Position = posicionByte;
-                    //stream.Write(carpetaActual.filename);
-                    //stream.Write(carpetaActual.filenameExt);
-                    //stream.Write(carpetaActual.fileAttributes);
-                    //stream.Write(carpetaActual.NT);
-                    //stream.Write(carpetaActual.millisegundos_Creado);
-                    //stream.Write(carpetaActual.hora_Creado);
-                    //stream.Write(carpetaActual.fecha_Creado);
-                    //stream.Write(carpetaActual.fecha_ultimoAcceso);
-                    //stream.Write(carpetaActual.reservedFAT32);
-                    //stream.Write(carpetaActual.hora_ultimaEscritura);
-                    //stream.Write(carpetaActual.fecha_ultimaEscritura);
-                    //stream.Write(carpetaActual.startingCluster);
-                    //stream.Write(carpetaActual.fileSize);
-                    
+
+                    stream.Write(carpetaActual.filename);
+                    stream.Write(carpetaActual.filenameExt);
+                    stream.Write(carpetaActual.fileAttributes);
+                    stream.Write(carpetaActual.NT);
+                    stream.Write(carpetaActual.millisegundos_Creado);
+                    stream.Write(carpetaActual.hora_Creado);
+                    stream.Write(carpetaActual.fecha_Creado);
+                    stream.Write(carpetaActual.fecha_ultimoAcceso);
+                    stream.Write(carpetaActual.reservedFAT32);
+                    stream.Write(carpetaActual.hora_ultimaEscritura);
+                    stream.Write(carpetaActual.fecha_ultimaEscritura);
+                    stream.Write(carpetaActual.startingCluster);
+                    stream.Write(carpetaActual.fileSize);
+
                     stream.Write(nuevaCarpeta.filename);
                     stream.Write(nuevaCarpeta.filenameExt);
                     stream.Write(nuevaCarpeta.fileAttributes);
@@ -623,7 +644,7 @@ namespace VirtualDiskFAT
                     stream.Write(nuevaCarpeta.startingCluster);
                     stream.Write(nuevaCarpeta.fileSize);
 
-                    int limiteCluster = (tamanioCluster - 32) / 2;
+                    int limiteCluster = (tamanioCluster - 64) / 2;
                     for (int i = 0; i < limiteCluster; i++)
                     {
                         ushort apuntadorFAT = 0;
@@ -943,10 +964,27 @@ namespace VirtualDiskFAT
         public Directory leerEntradaDirectorio(long poscionBytes)
         {
             Directory result = new Directory();
+            result.Padre = new Directory(); 
             using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
             {
                 reader.BaseStream.Position = poscionBytes;
-                result.posicionByte = reader.BaseStream.Position;
+                result.Padre.posicionByte = reader.BaseStream.Position;
+                ///reader.BaseStream.Position = poscionBytes+32; 
+                result.Padre.filename = reader.ReadBytes(8);
+                result.Padre.filenameExt = reader.ReadBytes(3);
+                result.Padre.fileAttributes = reader.ReadByte();
+                result.Padre.NT = reader.ReadByte();
+                result.Padre.millisegundos_Creado = reader.ReadByte();
+                result.Padre.hora_Creado = reader.ReadUInt16();
+                result.Padre.fecha_Creado = reader.ReadUInt16();
+                result.Padre.fecha_ultimoAcceso = reader.ReadUInt16();
+                result.Padre.reservedFAT32 = reader.ReadUInt16();
+                result.Padre.hora_ultimaEscritura = reader.ReadUInt16();
+                result.Padre.fecha_ultimaEscritura = reader.ReadUInt16();
+                result.Padre.startingCluster = reader.ReadUInt16();
+                result.Padre.fileSize = reader.ReadUInt32();
+
+                result.posicionByte = poscionBytes;
                 result.filename = reader.ReadBytes(8);
                 result.filenameExt = reader.ReadBytes(3);
                 result.fileAttributes = reader.ReadByte();
@@ -972,14 +1010,32 @@ namespace VirtualDiskFAT
         public List<Directory> getSubdirectorio(List<ushort> clusterSubdirectorio)
         {
             List<Directory> result = new List<Directory>();
-            foreach(ushort c in clusterSubdirectorio.Where(x=>x>0))
+            var filtro = clusterSubdirectorio.Where(x => x != 0);
+            foreach (ushort c in filtro)
             {
                 Directory entradaDirectorio = new Directory();
+                entradaDirectorio.Padre = new Directory();
                 long posicionBytes = posicionByteCluster(c);
                 using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
                 {
                     reader.BaseStream.Position = posicionBytes;
-                    entradaDirectorio.posicionByte = reader.BaseStream.Position;
+                    entradaDirectorio.Padre.posicionByte = reader.BaseStream.Position;
+                    ///reader.BaseStream.Position = posicionBytes + 32; 
+                    entradaDirectorio.Padre.filename = reader.ReadBytes(8);
+                    entradaDirectorio.Padre.filenameExt = reader.ReadBytes(3);
+                    entradaDirectorio.Padre.fileAttributes = reader.ReadByte();
+                    entradaDirectorio.Padre.NT = reader.ReadByte();
+                    entradaDirectorio.Padre.millisegundos_Creado = reader.ReadByte();
+                    entradaDirectorio.Padre.hora_Creado = reader.ReadUInt16();
+                    entradaDirectorio.Padre.fecha_Creado = reader.ReadUInt16();
+                    entradaDirectorio.Padre.fecha_ultimoAcceso = reader.ReadUInt16();
+                    entradaDirectorio.Padre.reservedFAT32 = reader.ReadUInt16();
+                    entradaDirectorio.Padre.hora_ultimaEscritura = reader.ReadUInt16();
+                    entradaDirectorio.Padre.fecha_ultimaEscritura = reader.ReadUInt16();
+                    entradaDirectorio.Padre.startingCluster = reader.ReadUInt16();
+                    entradaDirectorio.Padre.fileSize = reader.ReadUInt32();
+
+                    entradaDirectorio.posicionByte = posicionBytes;
                     entradaDirectorio.filename = reader.ReadBytes(8);
                     entradaDirectorio.filenameExt = reader.ReadBytes(3);
                     entradaDirectorio.fileAttributes = reader.ReadByte();
@@ -1003,13 +1059,13 @@ namespace VirtualDiskFAT
 
         public void agregarSubDirectorioCarpetaActual(ushort cluster)
         {
-            long posicion = carpetaActual.posicionByte;
             int entradaLibre = 0;
-            int limiteCluster = (tamanioCluster - 32) / 2;
-
+            int limiteCluster = (tamanioCluster - 64) / 2;
+            long posicion = carpetaActual.posicionByte + 64;
+            
             using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
             {
-                reader.BaseStream.Position = posicion + 32;
+                reader.BaseStream.Position = posicion;
                 
                 for (int j = 0; j < limiteCluster; j++)
                 {
@@ -1024,10 +1080,9 @@ namespace VirtualDiskFAT
 
             using (BinaryWriter stream = new BinaryWriter(File.Open(frmMain.discoDefault, FileMode.Open)))
             {
-                stream.BaseStream.Position = (posicion + 32)+(entradaLibre*2);
+                stream.BaseStream.Position = (posicion) + (entradaLibre*2);
                 stream.Write(cluster);
             }
-
             actualizarCarpetaActual();
         }
         #endregion
@@ -1073,6 +1128,12 @@ namespace VirtualDiskFAT
         {
             long posicion = (numeroCluster * tamanioCluster) + mbrOffset;
             return posicion;
+        }
+
+        public ushort clusterPosicionByte(long posicionBytes)
+        {
+            ushort cluster = (ushort)((posicionBytes - mbrOffset) / tamanioCluster);
+            return cluster;
         }
 
         /// <summary>

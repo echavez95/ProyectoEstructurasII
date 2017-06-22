@@ -148,6 +148,7 @@ namespace VirtualDiskFAT
     [Serializable]
     public class Directory
     {
+        public Directory Padre { get; set; }
         public byte[] filename { get; set; }
         public byte[] filenameExt { get; set; } //3
         public byte fileAttributes { get; set; }
@@ -212,8 +213,9 @@ namespace VirtualDiskFAT
             startingCluster = clusterInicio;
             fileSize = tamanio;
         }
-        public void nuevaCarpeta(string nombreCarpeta, DateTime creado)
+        public void nuevaCarpeta(Directory padre, string nombreCarpeta, DateTime creado)
         {
+            Padre = padre;
             byte[] temp = Encoding.ASCII.GetBytes(nombreCarpeta);
             Array.Resize<byte>(ref temp, 8);
             filename = temp;
