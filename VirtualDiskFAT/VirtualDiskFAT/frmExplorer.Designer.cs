@@ -31,10 +31,10 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmExplorer));
             this.panel1 = new System.Windows.Forms.Panel();
+            this.lblFolder = new System.Windows.Forms.Label();
             this.panel2 = new System.Windows.Forms.Panel();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.btnNuevaCarpeta = new System.Windows.Forms.ToolStripButton();
-            this.btnBorrarCarpeta = new System.Windows.Forms.ToolStripButton();
             this.btnAgregar = new System.Windows.Forms.ToolStripButton();
             this.btnExtraer = new System.Windows.Forms.ToolStripButton();
             this.btnBorrar = new System.Windows.Forms.ToolStripButton();
@@ -45,7 +45,6 @@
             this.listaIconos = new System.Windows.Forms.ImageList(this.components);
             this.lstPropiedadesDisco = new System.Windows.Forms.ListBox();
             this.lblDiscoDefault = new System.Windows.Forms.Label();
-            this.lblFolder = new System.Windows.Forms.Label();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
             this.toolStrip1.SuspendLayout();
@@ -63,6 +62,14 @@
             this.panel1.Size = new System.Drawing.Size(806, 430);
             this.panel1.TabIndex = 1;
             // 
+            // lblFolder
+            // 
+            this.lblFolder.AutoSize = true;
+            this.lblFolder.Location = new System.Drawing.Point(213, 29);
+            this.lblFolder.Name = "lblFolder";
+            this.lblFolder.Size = new System.Drawing.Size(0, 13);
+            this.lblFolder.TabIndex = 7;
+            // 
             // panel2
             // 
             this.panel2.Controls.Add(this.toolStrip1);
@@ -76,7 +83,6 @@
             // 
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.btnNuevaCarpeta,
-            this.btnBorrarCarpeta,
             this.btnAgregar,
             this.btnExtraer,
             this.btnBorrar});
@@ -95,16 +101,6 @@
             this.btnNuevaCarpeta.Size = new System.Drawing.Size(105, 22);
             this.btnNuevaCarpeta.Text = "Nueva Carpeta";
             this.btnNuevaCarpeta.Click += new System.EventHandler(this.btnNuevaCarpeta_Click);
-            // 
-            // btnBorrarCarpeta
-            // 
-            this.btnBorrarCarpeta.Image = global::VirtualDiskFAT.Properties.Resources.delete_folder;
-            this.btnBorrarCarpeta.ImageAlign = System.Drawing.ContentAlignment.TopLeft;
-            this.btnBorrarCarpeta.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btnBorrarCarpeta.Name = "btnBorrarCarpeta";
-            this.btnBorrarCarpeta.Size = new System.Drawing.Size(103, 22);
-            this.btnBorrarCarpeta.Text = "Borrar Carpeta";
-            this.btnBorrarCarpeta.Click += new System.EventHandler(this.btnBorrarCarpeta_Click);
             // 
             // btnAgregar
             // 
@@ -188,14 +184,6 @@
             this.lblDiscoDefault.TabIndex = 2;
             this.lblDiscoDefault.Text = "Disco:";
             // 
-            // lblFolder
-            // 
-            this.lblFolder.AutoSize = true;
-            this.lblFolder.Location = new System.Drawing.Point(213, 29);
-            this.lblFolder.Name = "lblFolder";
-            this.lblFolder.Size = new System.Drawing.Size(0, 13);
-            this.lblFolder.TabIndex = 7;
-            // 
             // frmExplorer
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -228,7 +216,6 @@
         private System.Windows.Forms.ImageList listaIconos;
         private System.Windows.Forms.ToolStrip toolStrip1;
         private System.Windows.Forms.ToolStripButton btnNuevaCarpeta;
-        private System.Windows.Forms.ToolStripButton btnBorrarCarpeta;
         private System.Windows.Forms.ListView viewGeneral;
         private System.Windows.Forms.ColumnHeader Nombre;
         private System.Windows.Forms.ColumnHeader Fecha_Hora;

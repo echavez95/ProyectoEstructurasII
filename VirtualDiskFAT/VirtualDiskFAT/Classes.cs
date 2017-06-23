@@ -213,9 +213,8 @@ namespace VirtualDiskFAT
             startingCluster = clusterInicio;
             fileSize = tamanio;
         }
-        public void nuevaCarpeta(Directory padre, string nombreCarpeta, DateTime creado)
+        public void nuevaCarpeta(string nombreCarpeta, DateTime creado)
         {
-            Padre = padre;
             byte[] temp = Encoding.ASCII.GetBytes(nombreCarpeta);
             Array.Resize<byte>(ref temp, 8);
             filename = temp;

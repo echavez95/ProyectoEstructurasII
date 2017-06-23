@@ -19,8 +19,7 @@ namespace VirtualDiskFAT
         public List<FAT16> fat2List = new List<FAT16>();
         public List<Directory> listaRootDirectory = new List<Directory>();
         public List<Directory> listaDirectorioActual = new List<Directory>();
-        Directory carpetaActual = new Directory();
-        long posicionCarpetaActual = new long();
+        public Directory carpetaActual2 = new Directory();
         public decodedMBR tablaMBR = new decodedMBR();
         public int mbrOffset = 512;
         public long inicioTablaFat1 = new long();
@@ -72,156 +71,137 @@ namespace VirtualDiskFAT
                     uint filesize = (uint)info.Length;
 
                     entradaArchivo.nuevoArchivo(info.Name, 'A', DateTime.Now, 0, filesize);
-
-                    guardarArchivoEnRoot(entradaArchivo, archivo);
+                    if (viewRootDirectory) {
+                        guardarArchivoEnRoot(entradaArchivo, archivo);
+                        leerRootDirectory();
+                        cargarViewGeneral(true);
+                    }else
+                    {
+                        guardarArchivo(entradaArchivo, archivo);
+                        cargarViewGeneral(false);
+                    }
+                    
                 }
             }
         }
         private void btnExtraer_Click(object sender, EventArgs e)
         {
-            string seleccionado = viewGeneral.SelectedItems[0].Text;
-            if (viewRootDirectory)
+            ListViewItem seleccionado = viewGeneral.SelectedItems[0];
+            string[] prop = seleccionado.Tag.ToString().Split(',');
+            if (prop[0] == "A") //obtiene datos del directorio guardados en el listviewitem, si es una carpeta entonces
             {
-                byte[] archivo = sacarArchivoDeRoot(seleccionado);
-
-                SaveFileDialog dlgGuardarArchivo = new SaveFileDialog();
-                dlgGuardarArchivo.FileName = seleccionado;
-                if (dlgGuardarArchivo.ShowDialog() == DialogResult.OK)
+                if (viewRootDirectory)
                 {
-                    if (!File.Exists(dlgGuardarArchivo.FileName))
-                    {
-                        //File.WriteAllBytes(dlgGuardarArchivo.FileName, archivo);
+                    ushort cluster = Convert.ToUInt16(prop[1].ToString());
+                    byte[] archivo = sacarArchivoDeRoot(cluster);
 
-                        using (Stream file = File.OpenWrite(dlgGuardarArchivo.FileName))
+                    SaveFileDialog dlgGuardarArchivo = new SaveFileDialog();
+                    dlgGuardarArchivo.FileName = seleccionado.Text.ToString();
+                    if (dlgGuardarArchivo.ShowDialog() == DialogResult.OK)
+                    {
+                        if (!File.Exists(dlgGuardarArchivo.FileName))
                         {
-                            file.Write(archivo, 0, archivo.Length);
+                            //File.WriteAllBytes(dlgGuardarArchivo.FileName, archivo);
+
+                            using (Stream file = File.OpenWrite(dlgGuardarArchivo.FileName))
+                            {
+                                file.Write(archivo, 0, archivo.Length);
+                            }
+
+                            MessageBox.Show("Creado Con Exito!",
+                                            "Informacion",
+                                            MessageBoxButtons.OK,
+                                            MessageBoxIcon.Exclamation);
                         }
-                        
-                        MessageBox.Show("Creado Con Exito!",
-                                        "Informacion",
-                                        MessageBoxButtons.OK,
-                                        MessageBoxIcon.Exclamation);
+                        else
+                        {
+                            MessageBox.Show("No se puede reemplazar el archivo!",
+                                            "Error",
+                                            MessageBoxButtons.OK,
+                                            MessageBoxIcon.Error);
+                        }
+
+                    }
+                }
+            }
+        }
+        
+        private void btnNuevaCarpeta_Click(object sender, EventArgs e)
+        {
+            string nombreCarpeta = Interaction.InputBox("Nombre", "Nueva Carpeta");
+            
+            //nombreCarpeta = Interaction.InputBox("Nombre", "Nueva Carpeta");
+            if(nombreCarpeta.Length > 0 && nombreCarpeta.Length <= 8)
+            {
+                if (viewRootDirectory)
+                {
+                    int existecarpeta = 0;
+                    foreach (var v in listaRootDirectory)
+                    {
+                        string a = Encoding.ASCII.GetString(v.filename);
+                        string nombre = a.Replace("\0", string.Empty);
+                        if (nombre == nombreCarpeta)
+                        {
+                            existecarpeta = 1;
+                        }
+                    }
+
+                    if (existecarpeta > 0)
+                    {
+                        MessageBox.Show("Ya existe una carpeta con ese nombre!"
+                                        , "Informacion"
+                                        , MessageBoxButtons.OK
+                                        , MessageBoxIcon.Error);
                     }
                     else
                     {
-                        MessageBox.Show("No se puede reemplazar el archivo!",
-                                        "Error",
-                                        MessageBoxButtons.OK,
-                                        MessageBoxIcon.Error);
+                        Directory Carpeta = new Directory();
+                        Carpeta.nuevaCarpeta(nombreCarpeta, DateTime.Now);
+                        crearCarpetaEnRoot(Carpeta);
+                        leerRootDirectory();
+                        cargarViewGeneral(true);
                     }
-
-                }
-            }
-        }
-
-        private void btnSacar_Click(object sender, EventArgs e)
-        {
-
-
-        }
-
-        private void btnNuevaCarpeta_Click(object sender, EventArgs e)
-        {
-            string nombreCarpeta;
-            do
-            {
-                nombreCarpeta = Interaction.InputBox("Nombre", "Nueva Carpeta");
-                if(nombreCarpeta.Length > 0 && nombreCarpeta.Length <= 8)
-                {
-                    break;
                 }
                 else
                 {
-                    MessageBox.Show("El nombre debe ser menor o igual a 8 caracteres"
-                                    , "Informacion"
-                                    , MessageBoxButtons.OK
-                                    , MessageBoxIcon.Exclamation);
-                }
-            } while (true);
-
-            if (viewRootDirectory)
-            {
-                int existecarpeta = 0;
-                foreach (var v in listaRootDirectory)
-                {
-                    string a = Encoding.ASCII.GetString(v.filename);
-                    string nombre = a.Replace("\0", string.Empty);
-                    if (nombre == nombreCarpeta)
+                    int existecarpeta = 0;
+                    foreach (var v in listaDirectorioActual)
                     {
-                        existecarpeta = 1;
+                        string a = Encoding.ASCII.GetString(v.filename);
+                        string nombre = a.Replace("\0", string.Empty);
+                        if (nombre == nombreCarpeta)
+                        {
+                            existecarpeta = 1;
+                        }
                     }
-                }
 
-                if (existecarpeta > 0)
-                {
-                    MessageBox.Show("Ya existe una carpeta con ese nombre!"
-                                    , "Informacion"
-                                    , MessageBoxButtons.OK
-                                    , MessageBoxIcon.Error);
-                }
-                else
-                {
-                    Directory Carpeta = new Directory();
-                    Carpeta.nuevaCarpeta(null,nombreCarpeta, DateTime.Now);
-                    crearCarpetaEnRoot(Carpeta);
-
-                    leerRootDirectory();
-                    cargarViewGeneral(true);
-                }
-            }else
-            {
-                int existecarpeta = 0;
-                foreach (var v in listaDirectorioActual)
-                {
-                    string a = Encoding.ASCII.GetString(v.filename);
-                    string nombre = a.Replace("\0", string.Empty);
-                    if (nombre == nombreCarpeta)
+                    if (existecarpeta > 0)
                     {
-                        existecarpeta = 1;
+                        MessageBox.Show("Ya existe una carpeta con ese nombre!"
+                                        , "Informacion"
+                                        , MessageBoxButtons.OK
+                                        , MessageBoxIcon.Error);
+                    }
+                    else
+                    {
+                        Directory Carpeta = new Directory();
+                        Carpeta.nuevaCarpeta(nombreCarpeta, DateTime.Now);
+                        crearCarpeta(Carpeta);
+                        cargarCarpeta(carpetaActual2.startingCluster);
+                        cargarViewGeneral(false);
                     }
                 }
-
-                if (existecarpeta > 0)
-                {
-                    MessageBox.Show("Ya existe una carpeta con ese nombre!"
-                                    , "Informacion"
-                                    , MessageBoxButtons.OK
-                                    , MessageBoxIcon.Error);
-                }
-                else
-                {
-                    Directory Carpeta = new Directory();
-                    Carpeta.nuevaCarpeta(carpetaActual,nombreCarpeta, DateTime.Now);
-                    crearCarpeta(Carpeta);
-                    actualizarCarpetaActual();
-                    cargarViewGeneral(false);
-                }
             }
-            
-           
+            else
+            {
+                MessageBox.Show("El nombre debe ser menor o igual a 8 caracteres"
+                                , "Informacion"
+                                , MessageBoxButtons.OK
+                                , MessageBoxIcon.Exclamation);
+            }
         }
 
-        private void btnBorrarCarpeta_Click(object sender, EventArgs e)
-        {
-            if (viewGeneral.SelectedItems.Count == 0 || viewGeneral.SelectedItems.Count > 1)
-            {
-                MessageBox.Show("Seleccione una carpeta"
-                                    , "Informacion"
-                                    , MessageBoxButtons.OK
-                                    , MessageBoxIcon.Error);
-            }else
-            {
-                string nombre = viewGeneral.SelectedItems[0].Text;
-                borrarCarpetaEnRoot(nombre);
-                MessageBox.Show("Carpeta Borrada"
-                                    , "Informacion"
-                                    , MessageBoxButtons.OK
-                                    , MessageBoxIcon.Exclamation);
-            }
-            leerRootDirectory();
-            cargarViewGeneral(true);
-        }
-        
+       
         private void viewGeneral_DoubleClick(object sender, EventArgs e)
         {
             ListViewItem seleccionado = viewGeneral.SelectedItems[0];
@@ -229,50 +209,44 @@ namespace VirtualDiskFAT
             string[] prop = seleccionado.Tag.ToString().Split(',');
             if (prop[0] == "D") //obtiene datos del directorio guardados en el listviewitem, si es una carpeta entonces
             {
-                if (viewRootDirectory) //si estoy en el root 
+                //if (viewRootDirectory) //si estoy en el root 
+                //{
+                //    ushort clusterCarpeta = Convert.ToUInt16(seleccionado.Tag.ToString());
+                //    cargarCarpeta(clusterCarpeta);
+                //    lblFolder.Text = "Carpeta Actual: " + Encoding.ASCII.GetString(carpetaActual2.filename);
+                //    cargarViewGeneral(false);
+                //}else
+                //{
+                if (seleccionado.Text == "..")
                 {
-                    string nombreCarpeta = seleccionado.SubItems[0].Text;
-                    
-                    Directory carpeta = listaRootDirectory.Where(x => Encoding.ASCII.GetString(x.filename) == nombreCarpeta).FirstOrDefault();
-                   
-                    carpetaActual = leerEntradaDirectorio(posicionByteCluster(carpeta.startingCluster));
-
-                    actualizarCarpetaActual();
-
-                    lblFolder.Text = "Carpeta Actual: " + Encoding.ASCII.GetString(carpetaActual.filename);
-
-                    cargarViewGeneral(false);
-                }else
-                {
-                    if (seleccionado == viewGeneral.Items[0])
+                    ushort clusterCarpeta = Convert.ToUInt16(prop[1].ToString());
+                    if (clusterCarpeta == 0)
                     {
-                        if (carpetaActual.Padre == null)
-                        {
-                            carpetaActual = new Directory();
-                            lblFolder.Text = "Carpeta Actual: Root";
-                            leerRootDirectory();
-                            cargarViewGeneral(true);
-                        }
-                        else
-                        {
-                            carpetaActual = carpetaActual.Padre;
-                            actualizarCarpetaActual();
-                            lblFolder.Text = "Carpeta Actual: " + Encoding.ASCII.GetString(carpetaActual.filename);
-                            cargarViewGeneral(false);
-                        }
-                    }
-                    else
+                        leerRootDirectory();
+                        lblFolder.Text = "Carpeta Actual: Root";
+                        cargarViewGeneral(true);
+                    }else
                     {
-                        string nombreCarpeta = seleccionado.SubItems[0].Text;
-                        Directory carpeta = listaDirectorioActual.Where(x => Encoding.ASCII.GetString(x.filename) == nombreCarpeta).FirstOrDefault();
-                        
-                        carpetaActual = leerEntradaDirectorio(posicionByteCluster(carpeta.Padre.startingCluster));
-                        actualizarCarpetaActual();
-                        lblFolder.Text = "Carpeta Actual: " + Encoding.ASCII.GetString(carpetaActual.filename);
+                        cargarCarpeta(clusterCarpeta);
+                        lblFolder.Text = "Carpeta Actual: " + Encoding.ASCII.GetString(carpetaActual2.filename);
                         cargarViewGeneral(false);
                     }
                 }
+                else
+                {
+                    ushort clusterCarpeta = Convert.ToUInt16(prop[1].ToString());
+                    cargarCarpeta(clusterCarpeta);
+                    lblFolder.Text = "Carpeta Actual: " + Encoding.ASCII.GetString(carpetaActual2.filename);
+                    cargarViewGeneral(false);
 
+                    //string nombreCarpeta = seleccionado.SubItems[0].Text;
+                    //Directory carpeta = listaDirectorioActual.Where(x => Encoding.ASCII.GetString(x.filename) == nombreCarpeta).FirstOrDefault();
+
+                    //carpetaActual = leerEntradaDirectorio(posicionByteCluster(carpeta.Padre.startingCluster));
+                    //actualizarCarpetaActual();
+                    //lblFolder.Text = "Carpeta Actual: " + Encoding.ASCII.GetString(carpetaActual.filename);
+                    //cargarViewGeneral(false);
+                }
             }
         }
 
@@ -329,7 +303,6 @@ namespace VirtualDiskFAT
             lstPropiedadesDisco.Items.Add("Formato de Volumen: " + tablaMBR.fileSystemType);
 
         }
-
         public void leerRootDirectory()
         {
             listaRootDirectory.Clear();
@@ -394,23 +367,30 @@ namespace VirtualDiskFAT
         {
             viewGeneral.Items.Clear();
             List<Directory> listaDirectorios = new List<Directory>();
-
-            if (!isRoot) {
-                // carpetaActual.Padre.posicionByte.ToString()
-                string[] info = { ".."+ Encoding.ASCII.GetString(carpetaActual.filename), "", carpetaActual.posicionByte.ToString() };
-                ListViewItem nod = new ListViewItem(info, 0);
-                nod.Tag = "D," + carpetaActual.posicionByte;
-                viewGeneral.Items.Add(nod);
+            int inicioContador = 0;
+            if (!isRoot)
+            {
                 viewRootDirectory = false;
                 listaDirectorios = listaDirectorioActual;
-            }else
+                Directory directorioPadre = listaDirectorios.ElementAt(0);
+                string[] info = { "..", "", "" };
+                carpetaActual2 = directorioPadre;
+                inicioContador = 1;
+                ListViewItem nod = new ListViewItem(info, 0);
+                nod.Tag = "D," + directorioPadre.Padre.startingCluster;
+                viewGeneral.Items.Add(nod);
+            }
+            else
             {
+                inicioContador = 0;
                 viewRootDirectory = true;
                 listaDirectorios = listaRootDirectory;
             }
-            //viewRootDirectory = true;
-            foreach (var file in listaDirectorios)
+
+           for(int i = inicioContador; i < listaDirectorios.Count(); i++)
             {
+                var file = listaDirectorios.ElementAt(i);
+
                 if (file.filename[0] != 0)
                 {
                     if (Convert.ToChar(file.fileAttributes) == 'D')
@@ -420,12 +400,12 @@ namespace VirtualDiskFAT
                         DateTime horaCreacion = file.getHora(file.hora_Creado);
 
                         string[] info = { nombre,
-                                          fechaCreacion.ToShortDateString() + ' ' + horaCreacion.ToShortTimeString(),
-                                          file.fileSize.ToString()
-                                        };
+                                              fechaCreacion.ToShortDateString() + ' ' + horaCreacion.ToShortTimeString(),
+                                              file.fileSize.ToString()
+                                            };
 
                         ListViewItem nod = new ListViewItem(info, 0);
-                        nod.Tag =  "D," + file.posicionByte;
+                        nod.Tag = "D," + file.startingCluster;
                         viewGeneral.Items.Add(nod);
                     }
                     else if (Convert.ToChar(file.fileAttributes) == 'A')
@@ -438,12 +418,12 @@ namespace VirtualDiskFAT
                         DateTime horaCreacion = file.getHora(file.hora_Creado);
 
                         string[] info = { nombre,
-                                          fechaCreacion.ToShortDateString() + ' ' + horaCreacion.ToShortTimeString(),
-                                          file.fileSize.ToString()
-                                        };
+                                              fechaCreacion.ToShortDateString() + ' ' + horaCreacion.ToShortTimeString(),
+                                              file.fileSize.ToString()
+                                            };
 
                         ListViewItem nod = new ListViewItem(info, 1);
-                        nod.Tag = "A," + file.posicionByte;
+                        nod.Tag = "A," + file.startingCluster;
                         viewGeneral.Items.Add(nod);
                     }
                 }
@@ -462,26 +442,26 @@ namespace VirtualDiskFAT
             }
             return posicionByteLibre;
         }
-
-        public void actualizarCarpetaActual()
+        public void cargarCarpeta(ushort cluster)
         {
-            carpetaActual.subDirectorio.Clear();
-            long posicion = carpetaActual.posicionByte;
-            carpetaActual.Padre = new Directory();
+            long posicion = posicionByteCluster(cluster);
+            Directory carpeta = new Directory();
+            carpeta = leerEntradaDirectorio(posicion);
             using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
             {
-                reader.BaseStream.Position = posicion + 26;
-                carpetaActual.Padre.startingCluster = reader.ReadUInt16();
-                reader.BaseStream.Position = reader.BaseStream.Position + 2;
+                reader.BaseStream.Position = posicion + 64;
                 int limiteCluster = (tamanioCluster - 64) / 2;
                 for (int j = 0; j < limiteCluster; j++)
                 {
                     ushort apuntadorFAT = reader.ReadUInt16();
-                    carpetaActual.subDirectorio.Add(apuntadorFAT);
+                    carpeta.subDirectorio.Add(apuntadorFAT);
                 }
             }
+            carpetaActual2 = carpeta;
             listaDirectorioActual.Clear();
-            listaDirectorioActual = getSubdirectorio(carpetaActual.subDirectorio);
+            listaDirectorioActual.Add(carpeta);
+            var listaDirectorios = getSubdirectorio(carpeta.subDirectorio);
+            listaDirectorioActual.AddRange(listaDirectorios.ToList());
         }
         #endregion
 
@@ -572,31 +552,32 @@ namespace VirtualDiskFAT
         /// Borra una carpeta creada en el root directory
         /// </summary>
         /// <param name="nombreCarpeta">nombre de la carpeta</param>
-        public void borrarCarpetaEnRoot(string nombreCarpeta)
-        {
-            Directory carpeta = listaRootDirectory.Where(x => Encoding.ASCII.GetString(x.filename) == nombreCarpeta).FirstOrDefault();
+        //public void borrarCarpetaEnRoot(string nombreCarpeta)
+        //{
+        //    Directory carpeta = listaRootDirectory.Where(x => Encoding.ASCII.GetString(x.filename) == nombreCarpeta).FirstOrDefault();
+            
+        //    long posicion = carpeta.posicionByte;
+        //    Directory carpetaenblanco = new Directory();
+        //    using (BinaryWriter stream = new BinaryWriter(File.Open(frmMain.discoDefault, FileMode.Open)))
+        //    {
+        //        stream.BaseStream.Position = posicion;
+        //        stream.Write(carpetaenblanco.filename);
+        //        stream.Write(carpetaenblanco.filenameExt);
+        //        stream.Write(carpetaenblanco.fileAttributes);
+        //        stream.Write(carpetaenblanco.NT);
+        //        stream.Write(carpetaenblanco.millisegundos_Creado);
+        //        stream.Write(carpetaenblanco.hora_Creado);
+        //        stream.Write(carpetaenblanco.fecha_Creado);
+        //        stream.Write(carpetaenblanco.fecha_ultimoAcceso);
+        //        stream.Write(carpetaenblanco.reservedFAT32);
+        //        stream.Write(carpetaenblanco.hora_ultimaEscritura);
+        //        stream.Write(carpetaenblanco.fecha_ultimaEscritura);
+        //        stream.Write(carpetaenblanco.startingCluster);
+        //        stream.Write(carpetaenblanco.fileSize);
+        //    }
 
-            long posicion = carpeta.posicionByte;
-            Directory carpetaenblanco = new Directory();
-            using (BinaryWriter stream = new BinaryWriter(File.Open(frmMain.discoDefault, FileMode.Open)))
-            {
-                stream.BaseStream.Position = posicion;
-                stream.Write(carpetaenblanco.filename);
-                stream.Write(carpetaenblanco.filenameExt);
-                stream.Write(carpetaenblanco.fileAttributes);
-                stream.Write(carpetaenblanco.NT);
-                stream.Write(carpetaenblanco.millisegundos_Creado);
-                stream.Write(carpetaenblanco.hora_Creado);
-                stream.Write(carpetaenblanco.fecha_Creado);
-                stream.Write(carpetaenblanco.fecha_ultimoAcceso);
-                stream.Write(carpetaenblanco.reservedFAT32);
-                stream.Write(carpetaenblanco.hora_ultimaEscritura);
-                stream.Write(carpetaenblanco.fecha_ultimaEscritura);
-                stream.Write(carpetaenblanco.startingCluster);
-                stream.Write(carpetaenblanco.fileSize);
-            }
-            setmarcadorCluster(carpeta.startingCluster, 0);
-        }
+        //    setmarcadorCluster(carpeta.startingCluster, 0);
+        //}
 
         /// <summary>
         /// Crear una Carpeta en el disco
@@ -616,19 +597,19 @@ namespace VirtualDiskFAT
                 {
                     stream.BaseStream.Position = posicionByte;
 
-                    stream.Write(carpetaActual.filename);
-                    stream.Write(carpetaActual.filenameExt);
-                    stream.Write(carpetaActual.fileAttributes);
-                    stream.Write(carpetaActual.NT);
-                    stream.Write(carpetaActual.millisegundos_Creado);
-                    stream.Write(carpetaActual.hora_Creado);
-                    stream.Write(carpetaActual.fecha_Creado);
-                    stream.Write(carpetaActual.fecha_ultimoAcceso);
-                    stream.Write(carpetaActual.reservedFAT32);
-                    stream.Write(carpetaActual.hora_ultimaEscritura);
-                    stream.Write(carpetaActual.fecha_ultimaEscritura);
-                    stream.Write(carpetaActual.startingCluster);
-                    stream.Write(carpetaActual.fileSize);
+                    stream.Write(carpetaActual2.filename);
+                    stream.Write(carpetaActual2.filenameExt);
+                    stream.Write(carpetaActual2.fileAttributes);
+                    stream.Write(carpetaActual2.NT);
+                    stream.Write(carpetaActual2.millisegundos_Creado);
+                    stream.Write(carpetaActual2.hora_Creado);
+                    stream.Write(carpetaActual2.fecha_Creado);
+                    stream.Write(carpetaActual2.fecha_ultimoAcceso);
+                    stream.Write(carpetaActual2.reservedFAT32);
+                    stream.Write(carpetaActual2.hora_ultimaEscritura);
+                    stream.Write(carpetaActual2.fecha_ultimaEscritura);
+                    stream.Write(carpetaActual2.startingCluster);
+                    stream.Write(carpetaActual2.fileSize);
 
                     stream.Write(nuevaCarpeta.filename);
                     stream.Write(nuevaCarpeta.filenameExt);
@@ -672,7 +653,6 @@ namespace VirtualDiskFAT
         /// <param name="archivo">Arreglo de bytes que contiene el archivo a guardar</param>
         public void guardarArchivoEnRoot(Directory Archivo, byte[] archivo)
         {
-            
             long posicionByteLibre = posicionByteLibreRootDirectory();
             if (posicionByteLibre >= 0)
             {
@@ -762,47 +742,109 @@ namespace VirtualDiskFAT
                                     , MessageBoxIcon.Error);
             }
         }
-        
+
         /// <summary>
         /// Sacar un archivo del root directory
         /// </summary>
         /// <param name="nombreArchivo">nombre del archivo</param>
         /// <returns></returns>
-        public byte[] sacarArchivoDeRoot(string nombreArchivo)
+        public byte[] sacarArchivoDeRoot(ushort cluster)
         {
-            var archivo = listaRootDirectory.Where(x => (Encoding.ASCII.GetString(x.filename)+"."+Encoding.ASCII.GetString(x.filenameExt)) == nombreArchivo).FirstOrDefault();
-
+            var archivo = listaRootDirectory.Where(x => x.startingCluster == cluster).FirstOrDefault();
             byte[] result = new byte[archivo.fileSize];
-            long posicionInicioCluster=0;
-            ushort[] clusters =  clustersArchivo(archivo);
+            long posicionInicioCluster = 0;
+            ushort[] clusters = clustersArchivo(archivo);
             if (clusters.Length == 1)
             {
                 posicionInicioCluster = posicionByteCluster(archivo.startingCluster);
                 using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
                 {
                     reader.BaseStream.Position = posicionInicioCluster;
-                    reader.Read(result, 0,(int)archivo.fileSize);
+                    reader.Read(result, 0, (int)archivo.fileSize);
                 }
-            }else
+            }
+            else
             {
-                for(int i=0;i<clusters.Length;i++)
+                for (int i = 0; i < clusters.Length; i++)
                 {
                     posicionInicioCluster = posicionByteCluster(clusters[i]);
                     using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
                     {
                         reader.BaseStream.Position = posicionInicioCluster;
                         int offset = 0;
-                        if (i > 0) offset = (i * tamanioCluster) ;
+                        if (i > 0) offset = (i * tamanioCluster);
 
                         if (i == clusters.Length - 1)
                         {
-                            long bytesSobrantes = archivo.fileSize-(tamanioCluster * (clusters.Length - 1));
-                            reader.Read(result, offset,(int)bytesSobrantes);
-                        }else
+                            long bytesSobrantes = archivo.fileSize - (tamanioCluster * (clusters.Length - 1));
+                            reader.Read(result, offset, (int)bytesSobrantes);
+                        }
+                        else
                         {
                             reader.Read(result, offset, tamanioCluster);
                         }
-                        
+
+                    }
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Sacar un archivo del disco
+        /// </summary>
+        /// <returns>byte array con el archivo</returns>
+        public byte[] sacarArchivo(ushort cluster)
+        {
+            long posicion = posicionByteCluster(cluster);
+            var archivo = leerEntradaArchivo(posicion);
+
+            byte[] result = new byte[archivo.fileSize];
+            long posicionInicioCluster=0;
+            ushort[] clusters =  clustersArchivo(archivo);
+
+            if (archivo.fileSize < tamanioCluster - 32)
+            {
+                posicionInicioCluster = posicion + 32;
+                using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
+                {
+                    reader.BaseStream.Position = posicionInicioCluster;
+                    reader.Read(result, 0, (int)archivo.fileSize);
+                }
+            }
+            else
+            {
+                if (clusters.Length == 1)
+                {
+                    posicionInicioCluster = posicionByteCluster(archivo.startingCluster);
+                    using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
+                    {
+                        reader.BaseStream.Position = posicionInicioCluster;
+                        reader.Read(result, 0, (int)archivo.fileSize);
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < clusters.Length; i++)
+                    {
+                        posicionInicioCluster = posicionByteCluster(clusters[i]);
+                        using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
+                        {
+                            reader.BaseStream.Position = posicionInicioCluster;
+                            int offset = 0;
+                            if (i > 0) offset = (i * tamanioCluster);
+
+                            if (i == clusters.Length - 1)
+                            {
+                                long bytesSobrantes = archivo.fileSize - (tamanioCluster * (clusters.Length - 1));
+                                reader.Read(result, offset, (int)bytesSobrantes);
+                            }
+                            else
+                            {
+                                reader.Read(result, offset, tamanioCluster);
+                            }
+
+                        }
                     }
                 }
             }
@@ -846,6 +888,7 @@ namespace VirtualDiskFAT
                 }
                 else
                 {
+                    setmarcadorCluster(clusterDirectoryEntry, 1);
                     ushort[] clustersAsignados = asignarClustersArchivo(Archivo.fileSize);
 
                     setmarcadorCluster(clusterDirectoryEntry, clustersAsignados[0]);
@@ -899,64 +942,18 @@ namespace VirtualDiskFAT
                         }
                     }
                 }
+                agregarSubDirectorioCarpetaActual(clusterDirectoryEntry);
             }
             else
             {
-                MessageBox.Show("No se puede crear la carpeta!"
+                MessageBox.Show("No se puede guardar el archivo!"
                                     , "Informacion"
                                     , MessageBoxButtons.OK
                                     , MessageBoxIcon.Error);
             }
             return clusterDirectoryEntry;
         }
-
-        /// <summary>
-        /// Sacar un archivo del disco
-        /// </summary>
-        /// <returns>byte array con el archivo</returns>
-        public byte[] sacarArchivo()
-        {
-            //var archivo = listaRootDirectory.Where(x => (Encoding.ASCII.GetString(x.filename) + "." + Encoding.ASCII.GetString(x.filenameExt)) == nombreArchivo).FirstOrDefault();
-
-            byte[] result = new byte[2];
-            //long posicionInicioCluster = 0;
-            //ushort[] clusters = clustersArchivo(archivo);
-            //if (clusters.Length == 1)
-            //{
-            //    posicionInicioCluster = posicionByteCluster(archivo.startingCluster);
-            //    using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
-            //    {
-            //        reader.BaseStream.Position = posicionInicioCluster;
-            //        reader.Read(result, 0, (int)archivo.fileSize);
-            //    }
-            //}
-            //else
-            //{
-            //    for (int i = 0; i < clusters.Length; i++)
-            //    {
-            //        posicionInicioCluster = posicionByteCluster(clusters[i]);
-            //        using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
-            //        {
-            //            reader.BaseStream.Position = posicionInicioCluster;
-            //            int offset = 0;
-            //            if (i > 0) offset = (i * tamanioCluster);
-
-            //            if (i == clusters.Length - 1)
-            //            {
-            //                long bytesSobrantes = archivo.fileSize - (tamanioCluster * (clusters.Length - 1));
-            //                reader.Read(result, offset, (int)bytesSobrantes);
-            //            }
-            //            else
-            //            {
-            //                reader.Read(result, offset, tamanioCluster);
-            //            }
-
-            //        }
-            //    }
-            //}
-           return result;
-        } 
-
+        
         /// <summary>
         /// Leer una entrada de directorio directamente por la posicion en bytes de la entrada
         /// </summary>
@@ -998,10 +995,41 @@ namespace VirtualDiskFAT
                 result.fecha_ultimaEscritura = reader.ReadUInt16();
                 result.startingCluster = reader.ReadUInt16();
                 result.fileSize = reader.ReadUInt32();
+
+
             }
             return result;
         }
 
+        /// <summary>
+        /// Lee una entrada de directorio de un archivo
+        /// </summary>
+        /// <param name="poscionBytes">la posicion en bytes de la entrada</param>
+        /// <returns>clase directorio con la informacion del archivo leido</returns>
+        public Directory leerEntradaArchivo(long poscionBytes)
+        {
+            Directory result = new Directory();
+            result.Padre = new Directory();
+            using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
+            {
+                reader.BaseStream.Position = poscionBytes;
+                result.filename = reader.ReadBytes(8);
+                result.filenameExt = reader.ReadBytes(3);
+                result.fileAttributes = reader.ReadByte();
+                result.NT = reader.ReadByte();
+                result.millisegundos_Creado = reader.ReadByte();
+                result.hora_Creado = reader.ReadUInt16();
+                result.fecha_Creado = reader.ReadUInt16();
+                result.fecha_ultimoAcceso = reader.ReadUInt16();
+                result.reservedFAT32 = reader.ReadUInt16();
+                result.hora_ultimaEscritura = reader.ReadUInt16();
+                result.fecha_ultimaEscritura = reader.ReadUInt16();
+                result.startingCluster = reader.ReadUInt16();
+                result.fileSize = reader.ReadUInt32();
+                result.posicionByte = poscionBytes;
+            }
+            return result;
+        }
         /// <summary>
         /// obtener lista de directorios que contiene la carpeta
         /// </summary>
@@ -1061,7 +1089,7 @@ namespace VirtualDiskFAT
         {
             int entradaLibre = 0;
             int limiteCluster = (tamanioCluster - 64) / 2;
-            long posicion = carpetaActual.posicionByte + 64;
+            long posicion = carpetaActual2.posicionByte + 64;
             
             using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
             {
@@ -1083,7 +1111,6 @@ namespace VirtualDiskFAT
                 stream.BaseStream.Position = (posicion) + (entradaLibre*2);
                 stream.Write(cluster);
             }
-            actualizarCarpetaActual();
         }
         #endregion
 
@@ -1171,7 +1198,7 @@ namespace VirtualDiskFAT
             int cantidadClusters = (int)Math.Ceiling((double)FileSize / tamanioCluster);
             ushort[] clusterAsignado = new ushort[cantidadClusters];
 
-            for (int j = 1; j < cantidadClusters; j++)
+            for (int j = 0; j < cantidadClusters; j++)
             {
                 clusterAsignado[j] = buscarClusterVacio();
                 //marcar como ocupado temporalmente para que no lo devuelva como vacio
