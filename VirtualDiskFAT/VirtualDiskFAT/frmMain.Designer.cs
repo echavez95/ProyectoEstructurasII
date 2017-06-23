@@ -43,7 +43,7 @@
             this.exploradorToolStripMenuItem});
             this.menuPrincipal.Location = new System.Drawing.Point(0, 0);
             this.menuPrincipal.Name = "menuPrincipal";
-            this.menuPrincipal.Size = new System.Drawing.Size(927, 24);
+            this.menuPrincipal.Size = new System.Drawing.Size(806, 24);
             this.menuPrincipal.TabIndex = 0;
             this.menuPrincipal.Text = "menuStrip1";
             // 
@@ -81,7 +81,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(927, 411);
+            this.ClientSize = new System.Drawing.Size(806, 456);
             this.Controls.Add(this.menuPrincipal);
             this.IsMdiContainer = true;
             this.MainMenuStrip = this.menuPrincipal;

@@ -59,7 +59,7 @@
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(806, 430);
+            this.panel1.Size = new System.Drawing.Size(806, 428);
             this.panel1.TabIndex = 1;
             // 
             // lblFolder
@@ -72,6 +72,7 @@
             // 
             // panel2
             // 
+            this.panel2.AutoSize = true;
             this.panel2.Controls.Add(this.toolStrip1);
             this.panel2.Controls.Add(this.viewGeneral);
             this.panel2.Location = new System.Drawing.Point(213, 45);
@@ -127,6 +128,7 @@
             this.btnBorrar.Name = "btnBorrar";
             this.btnBorrar.Size = new System.Drawing.Size(103, 22);
             this.btnBorrar.Text = "Borrar Archivo";
+            this.btnBorrar.Click += new System.EventHandler(this.btnBorrar_Click);
             // 
             // viewGeneral
             // 
@@ -170,9 +172,9 @@
             // lstPropiedadesDisco
             // 
             this.lstPropiedadesDisco.FormattingEnabled = true;
-            this.lstPropiedadesDisco.Location = new System.Drawing.Point(12, 25);
+            this.lstPropiedadesDisco.Location = new System.Drawing.Point(12, 29);
             this.lstPropiedadesDisco.Name = "lstPropiedadesDisco";
-            this.lstPropiedadesDisco.Size = new System.Drawing.Size(195, 316);
+            this.lstPropiedadesDisco.Size = new System.Drawing.Size(195, 342);
             this.lstPropiedadesDisco.TabIndex = 4;
             // 
             // lblDiscoDefault
@@ -188,13 +190,13 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(806, 430);
+            this.ClientSize = new System.Drawing.Size(806, 428);
             this.Controls.Add(this.panel1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MinimizeBox = false;
             this.Name = "frmExplorer";
             this.ShowInTaskbar = false;
-            this.Text = "frmExplorer";
+            this.Text = "Explorador de Disco";
             this.TopMost = true;
             this.Load += new System.EventHandler(this.frmExplorer_Load);
             this.panel1.ResumeLayout(false);
