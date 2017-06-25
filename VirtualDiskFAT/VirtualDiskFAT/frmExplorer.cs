@@ -29,28 +29,16 @@ namespace VirtualDiskFAT
         public frmExplorer()
         {
             InitializeComponent();
-
         }
 
         private void frmExplorer_Load(object sender, EventArgs e)
         {
-            if (frmMain.discoDefault == null)
-            {
-                MessageBox.Show("Abra un disco o cree un nuevo desde el menu archivo",
-                                   "Error",
-                                   MessageBoxButtons.OK,
-                                   MessageBoxIcon.Error);
-                this.Close();
-            }
-            else
-            {
-                lblDiscoDefault.Text = "Disco: " + frmMain.discoDefault;
+                lblDiscoDefault.Text = "Disco: " +  Constants.discoDefault;
                 leerInfoDisco();
                 leerTablasFat();
                 leerRootDirectory();
                 tamanioCluster = tablaMBR.bytesxSector * tablaMBR.sectorxCluster;
                 cargarViewGeneral(true);
-            }
         }
         private void btnAgregar_Click(object sender, EventArgs e)
         {
@@ -272,7 +260,7 @@ namespace VirtualDiskFAT
         public void leerInfoDisco()
         {
             byte[] temporalArray;
-            using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
+            using (BinaryReader reader = new BinaryReader(new FileStream( Constants.discoDefault, FileMode.Open)))
             {
                 reader.BaseStream.Seek(0, SeekOrigin.Begin);
                 temporalArray = reader.ReadBytes(3);
@@ -328,7 +316,7 @@ namespace VirtualDiskFAT
         public void leerRootDirectory()
         {
             listaRootDirectory.Clear();
-            using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
+            using (BinaryReader reader = new BinaryReader(new FileStream( Constants.discoDefault, FileMode.Open)))
             {
                 reader.BaseStream.Position = (tablaMBR.reservedSectors * tablaMBR.bytesxSector) + mbrOffset; //mas 512 de la tabla mbr
 
@@ -363,7 +351,7 @@ namespace VirtualDiskFAT
         {
             fat1List.Clear();
             fat2List.Clear();
-            using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
+            using (BinaryReader reader = new BinaryReader(new FileStream( Constants.discoDefault, FileMode.Open)))
             {
                 reader.BaseStream.Position = mbrOffset;
                 ////leer 2 tablas FAT
@@ -501,7 +489,7 @@ namespace VirtualDiskFAT
             long posicion = posicionByteCluster(cluster);
             Directory carpeta = new Directory();
             carpeta = leerEntradaDirectorio(posicion);
-            using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
+            using (BinaryReader reader = new BinaryReader(new FileStream( Constants.discoDefault, FileMode.Open)))
             {
                 reader.BaseStream.Position = posicion + 64;
                 int limiteCluster = (tamanioCluster - 64) / 2;
@@ -533,7 +521,7 @@ namespace VirtualDiskFAT
             {
                 ushort clusterSubCarpeta = buscarClusterVacio();
                 nuevaCarpeta.startingCluster = clusterSubCarpeta;
-                using (BinaryWriter stream = new BinaryWriter(File.Open(frmMain.discoDefault, FileMode.Open)))
+                using (BinaryWriter stream = new BinaryWriter(File.Open( Constants.discoDefault, FileMode.Open)))
                 {
                     stream.BaseStream.Position = posicionByteLibre;
                     stream.Write(nuevaCarpeta.filename);
@@ -613,7 +601,7 @@ namespace VirtualDiskFAT
             {
                 long posicionByte = posicionByteCluster(cluster);
                 nuevaCarpeta.startingCluster = cluster;
-                using (BinaryWriter stream = new BinaryWriter(File.Open(frmMain.discoDefault, FileMode.Open)))
+                using (BinaryWriter stream = new BinaryWriter(File.Open( Constants.discoDefault, FileMode.Open)))
                 {
                     stream.BaseStream.Position = posicionByte;
 
@@ -681,7 +669,7 @@ namespace VirtualDiskFAT
 
                 long posicionClusterArchivo = posicionByteCluster(clusterInicioArchivo);
 
-                using (BinaryWriter stream = new BinaryWriter(File.Open(frmMain.discoDefault, FileMode.Open)))
+                using (BinaryWriter stream = new BinaryWriter(File.Open( Constants.discoDefault, FileMode.Open)))
                 {
                     stream.BaseStream.Position = posicionByteLibre;
                     stream.Write(Archivo.filename);
@@ -702,7 +690,7 @@ namespace VirtualDiskFAT
                 if (Archivo.fileSize < tamanioCluster)
                 {
                     
-                    using (BinaryWriter stream = new BinaryWriter(File.Open(frmMain.discoDefault, FileMode.Open)))
+                    using (BinaryWriter stream = new BinaryWriter(File.Open( Constants.discoDefault, FileMode.Open)))
                     {
                         stream.BaseStream.Position = posicionClusterArchivo;
                         stream.Write(archivo, 0, archivo.Length);
@@ -726,7 +714,7 @@ namespace VirtualDiskFAT
                     for (int i = 0; i < cantidadClusters; i++)
                     {
                         posicionClusterArchivo = posicionByteCluster(clusterAsignado[i]);
-                        using (BinaryWriter stream = new BinaryWriter(File.Open(frmMain.discoDefault, FileMode.Open)))
+                        using (BinaryWriter stream = new BinaryWriter(File.Open( Constants.discoDefault, FileMode.Open)))
                         {
                             stream.BaseStream.Position = posicionClusterArchivo;
                             int offset=0;
@@ -777,7 +765,7 @@ namespace VirtualDiskFAT
             if (clusters.Length == 1)
             {
                 posicionInicioCluster = posicionByteCluster(archivo.startingCluster);
-                using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
+                using (BinaryReader reader = new BinaryReader(new FileStream( Constants.discoDefault, FileMode.Open)))
                 {
                     reader.BaseStream.Position = posicionInicioCluster;
                     reader.Read(result, 0, (int)archivo.fileSize);
@@ -788,7 +776,7 @@ namespace VirtualDiskFAT
                 for (int i = 0; i < clusters.Length; i++)
                 {
                     posicionInicioCluster = posicionByteCluster(clusters[i]);
-                    using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
+                    using (BinaryReader reader = new BinaryReader(new FileStream( Constants.discoDefault, FileMode.Open)))
                     {
                         reader.BaseStream.Position = posicionInicioCluster;
                         int offset = 0;
@@ -827,7 +815,7 @@ namespace VirtualDiskFAT
             if (archivo.fileSize < tamanioCluster - 32)
             {
                 posicionInicioCluster = posicion + 32;
-                using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
+                using (BinaryReader reader = new BinaryReader(new FileStream( Constants.discoDefault, FileMode.Open)))
                 {
                     reader.BaseStream.Position = posicionInicioCluster;
                     reader.Read(result, 0, (int)archivo.fileSize);
@@ -838,7 +826,7 @@ namespace VirtualDiskFAT
                 if (clusters.Length == 1)
                 {
                     posicionInicioCluster = posicionByteCluster(archivo.startingCluster);
-                    using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
+                    using (BinaryReader reader = new BinaryReader(new FileStream( Constants.discoDefault, FileMode.Open)))
                     {
                         reader.BaseStream.Position = posicionInicioCluster;
                         reader.Read(result, 0, (int)archivo.fileSize);
@@ -849,7 +837,7 @@ namespace VirtualDiskFAT
                     for (int i = 0; i < clusters.Length; i++)
                     {
                         posicionInicioCluster = posicionByteCluster(clusters[i]);
-                        using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
+                        using (BinaryReader reader = new BinaryReader(new FileStream( Constants.discoDefault, FileMode.Open)))
                         {
                             reader.BaseStream.Position = posicionInicioCluster;
                             int offset = 0;
@@ -887,7 +875,7 @@ namespace VirtualDiskFAT
                 if (Archivo.fileSize < tamanioCluster-32)
                 {
                     Archivo.startingCluster = 0;
-                    using (BinaryWriter stream = new BinaryWriter(File.Open(frmMain.discoDefault, FileMode.Open)))
+                    using (BinaryWriter stream = new BinaryWriter(File.Open( Constants.discoDefault, FileMode.Open)))
                     {
                         stream.BaseStream.Position = posicionByteDirectoryEntry;
                         stream.Write(Archivo.filename);
@@ -915,7 +903,7 @@ namespace VirtualDiskFAT
                     setmarcadorCluster(clusterDirectoryEntry, clustersAsignados[0]);
                     Archivo.startingCluster = clustersAsignados[0];
                     long posicionClusterArchivo = posicionByteCluster(clusterDirectoryEntry);
-                    using (BinaryWriter stream = new BinaryWriter(File.Open(frmMain.discoDefault, FileMode.Open)))
+                    using (BinaryWriter stream = new BinaryWriter(File.Open( Constants.discoDefault, FileMode.Open)))
                     {
                         stream.BaseStream.Position = posicionByteDirectoryEntry;
                         stream.Write(Archivo.filename);
@@ -936,7 +924,7 @@ namespace VirtualDiskFAT
                     for (int i = 0; i < clustersAsignados.Length; i++)
                     {
                         posicionClusterArchivo = posicionByteCluster(clustersAsignados[i]);
-                        using (BinaryWriter stream = new BinaryWriter(File.Open(frmMain.discoDefault, FileMode.Open)))
+                        using (BinaryWriter stream = new BinaryWriter(File.Open( Constants.discoDefault, FileMode.Open)))
                         {
                             stream.BaseStream.Position = posicionClusterArchivo;
                             int offset = 0;
@@ -1000,7 +988,7 @@ namespace VirtualDiskFAT
         {
             var archivo = listaRootDirectory.Where(x => x.startingCluster == cluster).FirstOrDefault();
             Directory carpetaenblanco = new Directory();
-            using (BinaryWriter stream = new BinaryWriter(File.Open(frmMain.discoDefault, FileMode.Open)))
+            using (BinaryWriter stream = new BinaryWriter(File.Open( Constants.discoDefault, FileMode.Open)))
             {
                 stream.BaseStream.Position = archivo.posicionByte;
                 stream.Write(carpetaenblanco.filename);
@@ -1033,7 +1021,7 @@ namespace VirtualDiskFAT
         {
             Directory result = new Directory();
             result.Padre = new Directory(); 
-            using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
+            using (BinaryReader reader = new BinaryReader(new FileStream( Constants.discoDefault, FileMode.Open)))
             {
                 reader.BaseStream.Position = poscionBytes;
                 result.Padre.posicionByte = reader.BaseStream.Position;
@@ -1081,7 +1069,7 @@ namespace VirtualDiskFAT
         {
             Directory result = new Directory();
             result.Padre = new Directory();
-            using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
+            using (BinaryReader reader = new BinaryReader(new FileStream( Constants.discoDefault, FileMode.Open)))
             {
                 reader.BaseStream.Position = poscionBytes;
                 result.filename = reader.ReadBytes(8);
@@ -1116,7 +1104,7 @@ namespace VirtualDiskFAT
                 Directory entradaDirectorio = new Directory();
                 entradaDirectorio.Padre = new Directory();
                 long posicionBytes = posicionByteCluster(c);
-                using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
+                using (BinaryReader reader = new BinaryReader(new FileStream( Constants.discoDefault, FileMode.Open)))
                 {
                     reader.BaseStream.Position = posicionBytes;
                     entradaDirectorio.Padre.posicionByte = reader.BaseStream.Position;
@@ -1188,7 +1176,7 @@ namespace VirtualDiskFAT
             int limiteCluster = (tamanioCluster - 64) / 2;
             long posicion = carpetaActual2.posicionByte + 64;
             
-            using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
+            using (BinaryReader reader = new BinaryReader(new FileStream(Constants.discoDefault, FileMode.Open)))
             {
                 reader.BaseStream.Position = posicion;
                 
@@ -1203,7 +1191,7 @@ namespace VirtualDiskFAT
                 }
             }
 
-            using (BinaryWriter stream = new BinaryWriter(File.Open(frmMain.discoDefault, FileMode.Open)))
+            using (BinaryWriter stream = new BinaryWriter(File.Open(Constants.discoDefault, FileMode.Open)))
             {
                 stream.BaseStream.Position = (posicion) + (entradaLibre*2);
                 stream.Write(cluster);
@@ -1220,7 +1208,7 @@ namespace VirtualDiskFAT
             int limiteCluster = (tamanioCluster - 64) / 2;
             long posicion = carpetaActual2.posicionByte + 64;
 
-            using (BinaryReader reader = new BinaryReader(new FileStream(frmMain.discoDefault, FileMode.Open)))
+            using (BinaryReader reader = new BinaryReader(new FileStream( Constants.discoDefault, FileMode.Open)))
             {
                 reader.BaseStream.Position = posicion;
 
@@ -1235,7 +1223,7 @@ namespace VirtualDiskFAT
                 }
             }
 
-            using (BinaryWriter stream = new BinaryWriter(File.Open(frmMain.discoDefault, FileMode.Open)))
+            using (BinaryWriter stream = new BinaryWriter(File.Open( Constants.discoDefault, FileMode.Open)))
             {
                 stream.BaseStream.Position = (posicion) + (posicionCluster * 2);
                 ushort vacio = new ushort();
@@ -1252,7 +1240,7 @@ namespace VirtualDiskFAT
         /// <param name="marcador">marcador del cluster(0=libre,1=Ocupado,numerodecluster=Apuntador a cluster siguiente)</param>
         void setmarcadorCluster(ushort numeroCluster, ushort marcador)
         {
-            using (BinaryWriter stream = new BinaryWriter(File.Open(frmMain.discoDefault, FileMode.Open)))
+            using (BinaryWriter stream = new BinaryWriter(File.Open( Constants.discoDefault, FileMode.Open)))
             {
                 stream.BaseStream.Position = inicioTablaFat1 + (numeroCluster * 2);
                 stream.Write(marcador);

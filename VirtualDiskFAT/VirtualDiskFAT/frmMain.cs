@@ -14,7 +14,7 @@ namespace VirtualDiskFAT
 {
     public partial class frmMain : Form
     {
-        public static string discoDefault { get; set; }
+        
         public frmMain()
         {
             InitializeComponent();
@@ -26,6 +26,8 @@ namespace VirtualDiskFAT
             SaveFileDialog dlgNuevoArchivo = new SaveFileDialog();
             dlgNuevoArchivo.RestoreDirectory = true;
             dlgNuevoArchivo.InitialDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            dlgNuevoArchivo.Filter = "Archivos de Disco | *.ead";
+            dlgNuevoArchivo.DefaultExt = "ead";
 
             if (dlgNuevoArchivo.ShowDialog() == DialogResult.OK)
             {
@@ -111,13 +113,27 @@ namespace VirtualDiskFAT
                             stream.Write(directorioVacio.fileSize);
                         }
                     }
-                    
-                    frmMain.discoDefault= Path.GetFullPath(dlgNuevoArchivo.FileName);
 
-                    MessageBox.Show("Creado Con Exito! Abra el explorador para usar el Disco",
-                                    "Informacion",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Exclamation);
+                    Constants.discoDefault = Path.GetFullPath(dlgNuevoArchivo.FileName);
+                    
+                    string rutaIndex = Constants.discoDefault.Substring(0, Constants.discoDefault.Length - 4) + ".index";
+
+                    using (FileStream fi = new FileStream(rutaIndex, FileMode.CreateNew))
+                    {
+                        fi.Seek(0, SeekOrigin.Begin);
+                        fi.WriteByte(0);
+                    }
+
+                    Constants.discoIndice = rutaIndex;
+
+                    DialogResult dialogo = MessageBox.Show("Creado Con Exito! Desea Abrir el Explorador?"
+                                                                , "Abir Disco"
+                                                                , MessageBoxButtons.YesNo
+                                                                , MessageBoxIcon.Question);
+                    if (dialogo == DialogResult.Yes)
+                    {
+                        abrirExplorador();
+                    }
                 }
                 else
                 {
@@ -133,26 +149,7 @@ namespace VirtualDiskFAT
 
         private void exploradorToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (discoDefault != null)
-            {
-                if (!Application.OpenForms.OfType<frmExplorer>().Any())
-                {
-                    frmExplorer explorador = new frmExplorer();
-                    explorador.MdiParent = this;
-                    explorador.WindowState = FormWindowState.Maximized;
-                    explorador.Show();
-                }
-
-            }
-            else
-            {
-                MessageBox.Show("Cargue un disco desde el menu Archivo->Abrir Disco",
-                                    "Error",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Error);
-            }
-
-
+            abrirExplorador();
         }
 
         private void abrirDiscoToolStripMenuItem_Click(object sender, EventArgs e)
@@ -160,11 +157,37 @@ namespace VirtualDiskFAT
             OpenFileDialog dlgAbrirArchivo = new OpenFileDialog();
             dlgAbrirArchivo.RestoreDirectory = true;
             dlgAbrirArchivo.InitialDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            dlgAbrirArchivo.Filter = "Archivos de Disco | *.ead";
+            dlgAbrirArchivo.DefaultExt = "ead";
+
             if (dlgAbrirArchivo.ShowDialog() == DialogResult.OK)
             {
                 if (File.Exists(dlgAbrirArchivo.FileName))
                 {
-                    discoDefault = Path.GetFullPath(dlgAbrirArchivo.FileName);
+                    string rutaDisco = Path.GetFullPath(dlgAbrirArchivo.FileName);
+                    string rutaIndice = rutaDisco.Substring(0, rutaDisco.Length - 4)+".index";
+
+                    if (File.Exists(Path.Combine(rutaIndice)))
+                    {
+                        Constants.discoDefault = rutaDisco;
+                        Constants.discoIndice = rutaIndice;
+
+                        DialogResult dialogo = MessageBox.Show("Cargado Con Exito! Desea Abrir el Explorador?"
+                                                                , "Abir Disco"
+                                                                , MessageBoxButtons.YesNo
+                                                                , MessageBoxIcon.Question);
+                        if (dialogo == DialogResult.Yes)
+                        {
+                            abrirExplorador();
+                        }
+                    }else
+                    {
+                        MessageBox.Show("No se puede Abrir el disco! no se encontro archivo de indice",
+                                   "Error",
+                                   MessageBoxButtons.OK,
+                                   MessageBoxIcon.Error);
+                    }
+                    
                 }
                 else
                 {
@@ -198,9 +221,29 @@ namespace VirtualDiskFAT
         }
         private void frmMain_Load(object sender, EventArgs e)
         {
-            
+           
         }
 
-       
+        public void abrirExplorador()
+        {
+            if (Constants.discoDefault != null)
+            {
+                if (!Application.OpenForms.OfType<frmExplorer>().Any())
+                {
+                    frmExplorer explorador = new frmExplorer();
+                    explorador.MdiParent = this;
+                    explorador.WindowState = FormWindowState.Maximized;
+                    explorador.Show();
+                }
+
+            }
+            else
+            {
+                MessageBox.Show("Cargue un disco desde el menu Archivo->Abrir Disco",
+                                    "Error",
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Error);
+            }
+        }
     }
 }
