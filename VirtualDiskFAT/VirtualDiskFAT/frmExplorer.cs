@@ -1238,7 +1238,8 @@ namespace VirtualDiskFAT
             using (BinaryWriter stream = new BinaryWriter(File.Open(frmMain.discoDefault, FileMode.Open)))
             {
                 stream.BaseStream.Position = (posicion) + (posicionCluster * 2);
-                stream.Write(0);
+                ushort vacio = new ushort();
+                stream.Write(vacio);
             }
         }
         #endregion
