@@ -12,6 +12,7 @@ namespace VirtualDiskFAT
 {
     public partial class frmBusqueda : Form
     {
+        public static bool cancelar;
         public frmBusqueda()
         {
             InitializeComponent();
@@ -39,12 +40,28 @@ namespace VirtualDiskFAT
         {
             if (viewBusqueda.SelectedItems.Count == 0)
             {
-                MessageBox.Show("Debe seleccionar un archivo!",
+                if (cancelar)
+                {
+                    e.Cancel = false;
+                }else
+                {
+                    MessageBox.Show("Debe seleccionar un archivo!",
                                        "Informacion",
                                        MessageBoxButtons.OK,
                                        MessageBoxIcon.Information);
-                e.Cancel=true;
+                    e.Cancel = true;
+                }
             }
+        }
+
+        private void btnCancelar_Click(object sender, EventArgs e)
+        {
+            cancelar = true;
+        }
+
+        private void viewBusqueda_Click(object sender, EventArgs e)
+        {
+            cancelar = false;
         }
     }
 }

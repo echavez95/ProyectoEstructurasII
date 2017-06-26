@@ -326,6 +326,46 @@ namespace VirtualDiskFAT
             }
         }
 
+        private void btnBorrarCarpeta_Click(object sender, EventArgs e)
+        {
+            if (viewGeneral.SelectedItems.Count > 0)
+            {
+                ListViewItem seleccionado = viewGeneral.SelectedItems[0];
+                string[] prop = seleccionado.Tag.ToString().Split(',');
+                if (prop[0] == "D") //obtiene datos del directorio guardados en el listviewitem, si es una carpeta entonces
+                {
+                    if (seleccionado.Text != "..")
+                    {
+                        ushort clusterCarpeta = Convert.ToUInt16(prop[1].ToString());
+                        bool borrado = borrarCarpeta(clusterCarpeta);
+                        if (borrado)
+                        {
+                            MessageBox.Show("Borrado Con Exito!",
+                                        "Informacion",
+                                        MessageBoxButtons.OK,
+                                        MessageBoxIcon.Exclamation);
+                            if (viewRootDirectory)
+                            {
+                                leerRootDirectory();
+                                cargarViewGeneral(true);
+                            }else
+                            {
+                                Directory actual = listaDirectorioActual.First();
+                                cargarCarpeta(actual.startingCluster);
+                                cargarViewGeneral(false);
+                            }
+                        }else
+                        {
+                            MessageBox.Show("No se puede eliminar la carpeta porque no esta vacia!",
+                                        "Informacion",
+                                        MessageBoxButtons.OK,
+                                        MessageBoxIcon.Error);
+                        }
+                    }
+                }
+            }
+        }
+
         #endregion
 
         #region //-------- CARGAR INFORMACION DE DISCO ---------
@@ -1101,17 +1141,59 @@ namespace VirtualDiskFAT
             leerTablasFat();
         }
 
-        public void borrarCarpeta(ushort cluster)
+        public bool borrarCarpeta(ushort cluster)
         {
             Directory tempCarpetaActual = carpetaActual2;
-            List<Directory> templistaDirectorioActual = listaDirectorioActual;
+            List<Directory> templistaDirectorioActual = new List<Directory>();
+            templistaDirectorioActual.AddRange(listaDirectorioActual);
             Directory carpetaAborrar = new Directory();
+            List<Directory> listaDirectorioCarpetaABorrar = new List<Directory>();
+
             cargarCarpeta(cluster);
+
             carpetaAborrar = carpetaActual2;
             carpetaActual2 = tempCarpetaActual;
+
+            listaDirectorioCarpetaABorrar.AddRange(listaDirectorioActual);
             listaDirectorioActual.Clear();
             listaDirectorioActual.AddRange(templistaDirectorioActual);
 
+            int conteo = carpetaAborrar.subDirectorio.Where(x => x != 0).Count();
+            if (conteo == 0)
+            {
+                if (viewRootDirectory)
+                {
+                    var archivo = listaRootDirectory.Where(x => x.startingCluster == cluster).FirstOrDefault();
+                    Directory carpetaenblanco = new Directory();
+                    using (BinaryWriter stream = new BinaryWriter(File.Open(Constants.discoDefault, FileMode.Open)))
+                    {
+                        stream.BaseStream.Position = archivo.posicionByte;
+                        stream.Write(carpetaenblanco.filename);
+                        stream.Write(carpetaenblanco.filenameExt);
+                        stream.Write(carpetaenblanco.fileAttributes);
+                        stream.Write(carpetaenblanco.NT);
+                        stream.Write(carpetaenblanco.millisegundos_Creado);
+                        stream.Write(carpetaenblanco.hora_Creado);
+                        stream.Write(carpetaenblanco.fecha_Creado);
+                        stream.Write(carpetaenblanco.fecha_ultimoAcceso);
+                        stream.Write(carpetaenblanco.reservedFAT32);
+                        stream.Write(carpetaenblanco.hora_ultimaEscritura);
+                        stream.Write(carpetaenblanco.fecha_ultimaEscritura);
+                        stream.Write(carpetaenblanco.startingCluster);
+                        stream.Write(carpetaenblanco.fileSize);
+                    }
+                    setmarcadorCluster(cluster, 0);
+                }
+                else
+                {
+                    setmarcadorCluster(cluster, 0);
+                    borrarSubDirectorioCarpetaActual(cluster);
+                    
+                }
+                
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -1471,8 +1553,13 @@ namespace VirtualDiskFAT
             }
             return clusterAsignado;
         }
+
+
         #endregion
 
-       
+        private void frmExplorer_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            OperacionesArbol.guardarArbol(arbolIndice);
+        }
     }
 }

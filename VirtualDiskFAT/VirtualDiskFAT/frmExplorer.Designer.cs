@@ -46,7 +46,7 @@
             this.listaIconos = new System.Windows.Forms.ImageList(this.components);
             this.lstPropiedadesDisco = new System.Windows.Forms.ListBox();
             this.lblDiscoDefault = new System.Windows.Forms.Label();
-            this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
+            this.btnBorrarCarpeta = new System.Windows.Forms.ToolStripButton();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
             this.toolStrip1.SuspendLayout();
@@ -86,7 +86,7 @@
             // 
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.btnNuevaCarpeta,
-            this.toolStripButton1,
+            this.btnBorrarCarpeta,
             this.btnAgregar,
             this.btnExtraer,
             this.btnBorrar,
@@ -200,14 +200,15 @@
             this.lblDiscoDefault.TabIndex = 2;
             this.lblDiscoDefault.Text = "Disco:";
             // 
-            // toolStripButton1
+            // btnBorrarCarpeta
             // 
-            this.toolStripButton1.Image = global::VirtualDiskFAT.Properties.Resources.delete_folder;
-            this.toolStripButton1.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.toolStripButton1.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolStripButton1.Name = "toolStripButton1";
-            this.toolStripButton1.Size = new System.Drawing.Size(103, 22);
-            this.toolStripButton1.Text = "Borrar Carpeta";
+            this.btnBorrarCarpeta.Image = global::VirtualDiskFAT.Properties.Resources.delete_folder;
+            this.btnBorrarCarpeta.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnBorrarCarpeta.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnBorrarCarpeta.Name = "btnBorrarCarpeta";
+            this.btnBorrarCarpeta.Size = new System.Drawing.Size(103, 22);
+            this.btnBorrarCarpeta.Text = "Borrar Carpeta";
+            this.btnBorrarCarpeta.Click += new System.EventHandler(this.btnBorrarCarpeta_Click);
             // 
             // frmExplorer
             // 
@@ -221,6 +222,7 @@
             this.ShowInTaskbar = false;
             this.Text = "Explorador de Disco";
             this.TopMost = true;
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.frmExplorer_FormClosing);
             this.Load += new System.EventHandler(this.frmExplorer_Load);
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
@@ -250,6 +252,6 @@
         private System.Windows.Forms.ToolStripButton btnBorrar;
         private System.Windows.Forms.Label lblFolder;
         private System.Windows.Forms.ToolStripButton btnBuscar;
-        private System.Windows.Forms.ToolStripButton toolStripButton1;
+        private System.Windows.Forms.ToolStripButton btnBorrarCarpeta;
     }
 }

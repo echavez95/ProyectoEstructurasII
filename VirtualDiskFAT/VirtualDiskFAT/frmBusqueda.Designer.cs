@@ -65,6 +65,7 @@
             this.viewBusqueda.Size = new System.Drawing.Size(298, 186);
             this.viewBusqueda.TabIndex = 4;
             this.viewBusqueda.UseCompatibleStateImageBehavior = false;
+            this.viewBusqueda.Click += new System.EventHandler(this.viewBusqueda_Click);
             // 
             // btnExtraerArchivo
             // 
@@ -91,6 +92,7 @@
             this.btnCancelar.Text = "Cancelar";
             this.btnCancelar.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
             this.btnCancelar.UseVisualStyleBackColor = true;
+            this.btnCancelar.Click += new System.EventHandler(this.btnCancelar_Click);
             // 
             // imageList1
             // 
