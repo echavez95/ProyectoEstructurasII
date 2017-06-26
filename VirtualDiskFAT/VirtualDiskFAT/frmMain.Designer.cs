@@ -43,7 +43,7 @@
             this.exploradorToolStripMenuItem});
             this.menuPrincipal.Location = new System.Drawing.Point(0, 0);
             this.menuPrincipal.Name = "menuPrincipal";
-            this.menuPrincipal.Size = new System.Drawing.Size(806, 24);
+            this.menuPrincipal.Size = new System.Drawing.Size(857, 24);
             this.menuPrincipal.TabIndex = 0;
             this.menuPrincipal.Text = "menuStrip1";
             // 
@@ -59,14 +59,14 @@
             // crearDiscoToolStripMenuItem
             // 
             this.crearDiscoToolStripMenuItem.Name = "crearDiscoToolStripMenuItem";
-            this.crearDiscoToolStripMenuItem.Size = new System.Drawing.Size(134, 22);
+            this.crearDiscoToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.crearDiscoToolStripMenuItem.Text = "Crear Disco";
             this.crearDiscoToolStripMenuItem.Click += new System.EventHandler(this.crearDiscoToolStripMenuItem_Click);
             // 
             // abrirDiscoToolStripMenuItem
             // 
             this.abrirDiscoToolStripMenuItem.Name = "abrirDiscoToolStripMenuItem";
-            this.abrirDiscoToolStripMenuItem.Size = new System.Drawing.Size(134, 22);
+            this.abrirDiscoToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.abrirDiscoToolStripMenuItem.Text = "Abrir Disco";
             this.abrirDiscoToolStripMenuItem.Click += new System.EventHandler(this.abrirDiscoToolStripMenuItem_Click);
             // 
@@ -81,7 +81,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(806, 456);
+            this.ClientSize = new System.Drawing.Size(857, 456);
             this.Controls.Add(this.menuPrincipal);
             this.IsMdiContainer = true;
             this.MainMenuStrip = this.menuPrincipal;

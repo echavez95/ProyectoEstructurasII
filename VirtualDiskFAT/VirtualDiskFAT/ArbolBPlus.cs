@@ -56,6 +56,7 @@ namespace VirtualDiskFAT
     {
         public string nombre { get; set; }
         public ushort cluster { get; set; }
+        public byte ubicacion { get; set; }
         public Hoja hijosDer { get; set; }
         public Hoja hijosIzq { get; set; }
 
@@ -71,10 +72,11 @@ namespace VirtualDiskFAT
             hijosDer = derecho;
         }
 
-        public void entradaHoja(string nombreArchivo, ushort clusterArchivo)
+        public void entradaHoja(string nombreArchivo, ushort clusterArchivo, byte esRoot)
         {
             nombre = nombreArchivo;
             cluster = clusterArchivo;
+            ubicacion = esRoot;
             hijosIzq = null;
             hijosDer = null;
         }
@@ -109,6 +111,54 @@ namespace VirtualDiskFAT
 
     public static class OperacionesArbol
     {
+        public static List<Nodo> buscarNombre(string nombre,Hoja hoja)
+        {
+            if (hoja.indice == true)
+            {
+                int tamanioHoja = hoja.Nodos.Count();
+                for (int i = 0; i < tamanioHoja; i++)
+                {
+                    Nodo nodoActual = hoja.Nodos.ElementAt(i);
+
+                    int c = string.Compare(nombre, nodoActual.nombre);
+                    if (c == -1)
+                    {
+                        List<Nodo> encontrado = buscarNombre(nombre, nodoActual.hijosIzq);
+                        return encontrado;
+                    }
+                    else
+                    {
+                        if (i != tamanioHoja - 1)
+                        {
+                            Nodo nodoSiguiente = hoja.Nodos.ElementAt(i + 1);
+                            c = string.Compare(nombre, nodoSiguiente.nombre);
+                            if (c == -1)
+                            {
+                                List<Nodo> encontrado = buscarNombre(nombre, nodoActual.hijosDer);
+                                return encontrado;
+                            }
+                            else
+                            {
+                                List<Nodo> encontrado = buscarNombre(nombre, nodoSiguiente.hijosDer);
+                                return encontrado;
+                            }
+                        }
+                        else
+                        {
+                            List<Nodo> encontrado = buscarNombre(nombre, nodoActual.hijosDer);
+                            return encontrado;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                List<Nodo> encontrado = hoja.Nodos.Where(x=>x.nombre.Contains(nombre)).ToList();
+                return encontrado;
+            }
+            return null;
+        }
+
         public static Nodo insertarNodo(Nodo nuevoNodo, Hoja hoja)
         {
             if (hoja.indice == false)

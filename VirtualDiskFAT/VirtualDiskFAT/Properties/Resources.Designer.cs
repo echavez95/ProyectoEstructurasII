@@ -63,6 +63,16 @@ namespace VirtualDiskFAT.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap cancel {
+            get {
+                object obj = ResourceManager.GetObject("cancel", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap delete_folder {
             get {
                 object obj = ResourceManager.GetObject("delete_folder", resourceCulture);
@@ -106,6 +116,16 @@ namespace VirtualDiskFAT.Properties {
         internal static System.Drawing.Bitmap folder {
             get {
                 object obj = ResourceManager.GetObject("folder", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap glass2 {
+            get {
+                object obj = ResourceManager.GetObject("glass2", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

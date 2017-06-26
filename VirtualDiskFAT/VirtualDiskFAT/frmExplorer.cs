@@ -14,18 +14,22 @@ namespace VirtualDiskFAT
 {
     public partial class frmExplorer : Form
     {
-     
-        public List<FAT16> fat1List = new List<FAT16>();
-        public List<FAT16> fat2List = new List<FAT16>();
-        public List<Directory> listaRootDirectory = new List<Directory>();
-        public List<Directory> listaDirectorioActual = new List<Directory>();
-        public Directory carpetaActual2 = new Directory();
-        public decodedMBR tablaMBR = new decodedMBR();
-        public int mbrOffset = 512;
-        public long inicioTablaFat1 = new long();
-        public long inicioTablaFat2 = new long();
-        public bool viewRootDirectory = new bool(); //variable que controla si lo que esta en el viewgeneral es el root directory
-        public int tamanioCluster = new int();
+        #region //---------------Variables Globales--------------------
+            public List<FAT16> fat1List = new List<FAT16>();
+            public List<FAT16> fat2List = new List<FAT16>();
+            public List<Directory> listaRootDirectory = new List<Directory>();
+            public List<Directory> listaDirectorioActual = new List<Directory>();
+            public Directory carpetaActual2 = new Directory();
+            public decodedMBR tablaMBR = new decodedMBR();
+            public int mbrOffset = 512;
+            public long inicioTablaFat1 = new long();
+            public long inicioTablaFat2 = new long();
+            public bool viewRootDirectory = new bool(); //variable que controla si lo que esta en el viewgeneral es el root directory
+            public int tamanioCluster = new int();
+            public static ArbolBPlus arbolIndice = new ArbolBPlus(); //Arbol b+ del indice
+        #endregion
+
+        #region //------------------Metodos del Formulario-----------------
         public frmExplorer()
         {
             InitializeComponent();
@@ -38,11 +42,13 @@ namespace VirtualDiskFAT
                 leerTablasFat();
                 leerRootDirectory();
                 tamanioCluster = tablaMBR.bytesxSector * tablaMBR.sectorxCluster;
+                cargarIndice();
                 cargarViewGeneral(true);
         }
         private void btnAgregar_Click(object sender, EventArgs e)
         {
             OpenFileDialog dlgAbrirArchivo = new OpenFileDialog();
+            dlgAbrirArchivo.Filter = "Todos los Archivos | *.*";
             byte[] archivo;
 
             if (dlgAbrirArchivo.ShowDialog() == DialogResult.OK)
@@ -92,6 +98,11 @@ namespace VirtualDiskFAT
                 }
 
                 SaveFileDialog dlgGuardarArchivo = new SaveFileDialog();
+                //string nombre = seleccionado.Text.Substring(0, seleccionado.Text.Length - 4);
+                string extension = seleccionado.Text.Substring(seleccionado.Text.Length - 3, 3);
+                dlgGuardarArchivo.Filter = "Archivos | *." + extension;
+                dlgGuardarArchivo.DefaultExt = extension;
+
                 dlgGuardarArchivo.FileName = seleccionado.Text.ToString();
                 if (dlgGuardarArchivo.ShowDialog() == DialogResult.OK)
                 {
@@ -252,6 +263,70 @@ namespace VirtualDiskFAT
                 }
             }
         }
+
+        private void btnBuscar_Click(object sender, EventArgs e)
+        {
+            frmBusqueda formBusqueda = new frmBusqueda();
+            ListViewItem seleccionado = new ListViewItem();
+            DialogResult drformBusqueda = formBusqueda.ShowDialog(this);
+            if (drformBusqueda == DialogResult.Cancel)
+            {
+                formBusqueda.Close();
+            }
+            else if (drformBusqueda == DialogResult.OK)
+            {
+                seleccionado = formBusqueda.getItemSeleccionadoView();
+                formBusqueda.Close();
+
+                string[] tag = seleccionado.Tag.ToString().Split(',');
+                byte[] archivo;
+                ushort cluster = Convert.ToUInt16(tag[0].ToString());
+                byte isRoot = Convert.ToByte(tag[1].ToString());
+
+                if (isRoot==1)
+                {
+                    archivo = sacarArchivoDeRoot(cluster);
+
+                }
+                else
+                {
+                    archivo = sacarArchivo(cluster);
+                }
+
+                SaveFileDialog dlgGuardarArchivo = new SaveFileDialog();
+                //string nombre = seleccionado.Text.Substring(0, seleccionado.Text.Length - 4);
+                string extension = seleccionado.Text.Substring(seleccionado.Text.Length - 3, 3);
+                dlgGuardarArchivo.Filter = "Archivos | *." + extension;
+                dlgGuardarArchivo.DefaultExt = extension;
+
+                dlgGuardarArchivo.FileName = seleccionado.Text.ToString();
+                if (dlgGuardarArchivo.ShowDialog() == DialogResult.OK)
+                {
+                    if (!File.Exists(dlgGuardarArchivo.FileName))
+                    {
+                        using (Stream file = File.OpenWrite(dlgGuardarArchivo.FileName))
+                        {
+                            file.Write(archivo, 0, archivo.Length);
+                        }
+
+                        MessageBox.Show("Creado Con Exito!",
+                                        "Informacion",
+                                        MessageBoxButtons.OK,
+                                        MessageBoxIcon.Exclamation);
+                    }
+                    else
+                    {
+                        MessageBox.Show("No se puede reemplazar el archivo!",
+                                        "Error",
+                                        MessageBoxButtons.OK,
+                                        MessageBoxIcon.Error);
+                    }
+
+                }
+            }
+        }
+
+        #endregion
 
         #region //-------- CARGAR INFORMACION DE DISCO ---------
         /// <summary>
@@ -424,8 +499,8 @@ namespace VirtualDiskFAT
                         DateTime horaCreacion = file.getHora(file.hora_Creado);
 
                         string[] info = { nombre,
-                                              fechaCreacion.ToShortDateString() + ' ' + horaCreacion.ToShortTimeString(),
-                                              file.fileSize.ToString()
+                                          fechaCreacion.ToShortDateString() + ' ' + horaCreacion.ToShortTimeString(),
+                                          file.fileSize.ToString()
                                             };
 
                         ListViewItem nod = new ListViewItem(info, 0);
@@ -441,12 +516,12 @@ namespace VirtualDiskFAT
                         DateTime fechaCreacion = file.getFecha(file.fecha_Creado);
                         DateTime horaCreacion = file.getHora(file.hora_Creado);
 
-                        string[] info = { nombre,
-                                              fechaCreacion.ToShortDateString() + ' ' + horaCreacion.ToShortTimeString(),
-                                              file.fileSize.ToString()
-                                            };
+                        //string[] info = { nombre,
+                        //                  fechaCreacion.ToShortDateString() + ' ' + horaCreacion.ToShortTimeString(),
+                        //                  file.fileSize.ToString()
+                        //                };
 
-                        ListViewItem nod = new ListViewItem(info, 1);
+                        //ListViewItem nod = new ListViewItem(info, 1);
                         ushort clusterDirectorioArchivo;
                         if (viewRootDirectory)
                         {
@@ -455,6 +530,15 @@ namespace VirtualDiskFAT
                         {
                             clusterDirectorioArchivo = clusterPosicionByte(file.posicionByte);
                         }
+                        ////
+                        string[] info = { nombre,
+                                          fechaCreacion.ToShortDateString() + ' ' + horaCreacion.ToShortTimeString(),
+                                          clusterDirectorioArchivo.ToString()
+                                        };
+
+                        ListViewItem nod = new ListViewItem(info, 1);
+                        ////
+
                         nod.Tag = "A," + clusterDirectorioArchivo;
                         viewGeneral.Items.Add(nod);
                     }
@@ -504,6 +588,26 @@ namespace VirtualDiskFAT
             listaDirectorioActual.Add(carpeta);
             var listaDirectorios = getSubdirectorio(carpeta.subDirectorio);
             listaDirectorioActual.AddRange(listaDirectorios.ToList());
+        }
+
+        /// <summary>
+        /// Carga el arbol de indice en memoria
+        /// </summary>
+        public void cargarIndice()
+        {
+            long tamanio;
+            using (BinaryReader reader = new BinaryReader(new FileStream(Constants.discoIndice, FileMode.Open)))
+            {
+                tamanio = reader.BaseStream.Length;
+            }
+
+            if (tamanio == 1)
+            {
+                arbolIndice = new ArbolBPlus();
+            }else
+            {
+                arbolIndice = OperacionesArbol.cargarArbol();
+            }
         }
         #endregion
         
@@ -741,6 +845,14 @@ namespace VirtualDiskFAT
                     }
                 }
                 leerRootDirectory();
+
+                string a = Encoding.ASCII.GetString(Archivo.filename);
+                string nombreArchivo = a.Replace("\0", string.Empty);
+                nombreArchivo = nombreArchivo + "."+ Encoding.ASCII.GetString(Archivo.filenameExt);
+                Nodo entradaIndice = new Nodo();
+                entradaIndice.entradaHoja(nombreArchivo, clusterInicioArchivo,1);
+                arbolIndice.insertarNodo(entradaIndice);
+                OperacionesArbol.guardarArbol(arbolIndice);
             }
             else
             {
@@ -899,7 +1011,7 @@ namespace VirtualDiskFAT
                 {
                     setmarcadorCluster(clusterDirectoryEntry, 1);
                     ushort[] clustersAsignados = asignarClustersArchivo(Archivo.fileSize);
-
+                    
                     setmarcadorCluster(clusterDirectoryEntry, clustersAsignados[0]);
                     Archivo.startingCluster = clustersAsignados[0];
                     long posicionClusterArchivo = posicionByteCluster(clusterDirectoryEntry);
@@ -952,6 +1064,14 @@ namespace VirtualDiskFAT
                     }
                 }
                 agregarSubDirectorioCarpetaActual(clusterDirectoryEntry);
+                
+                string a = Encoding.ASCII.GetString(Archivo.filename);
+                string nombreArchivo = a.Replace("\0", string.Empty);
+                nombreArchivo = nombreArchivo + "." + Encoding.ASCII.GetString(Archivo.filenameExt);
+                Nodo entradaIndice = new Nodo();
+                entradaIndice.entradaHoja(nombreArchivo, clusterDirectoryEntry,0);
+                arbolIndice.insertarNodo(entradaIndice);
+                OperacionesArbol.guardarArbol(arbolIndice);
             }
             else
             {
@@ -977,7 +1097,21 @@ namespace VirtualDiskFAT
                 setmarcadorCluster(c, 0);
             }
             borrarSubDirectorioCarpetaActual(cluster);
+            setmarcadorCluster(cluster, 0);
             leerTablasFat();
+        }
+
+        public void borrarCarpeta(ushort cluster)
+        {
+            Directory tempCarpetaActual = carpetaActual2;
+            List<Directory> templistaDirectorioActual = listaDirectorioActual;
+            Directory carpetaAborrar = new Directory();
+            cargarCarpeta(cluster);
+            carpetaAborrar = carpetaActual2;
+            carpetaActual2 = tempCarpetaActual;
+            listaDirectorioActual.Clear();
+            listaDirectorioActual.AddRange(templistaDirectorioActual);
+
         }
 
         /// <summary>
@@ -1338,5 +1472,7 @@ namespace VirtualDiskFAT
             return clusterAsignado;
         }
         #endregion
+
+       
     }
 }

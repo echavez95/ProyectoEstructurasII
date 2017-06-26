@@ -49,6 +49,12 @@
   <ItemGroup>
     <Compile Include="ArbolBPlus.cs" />
     <Compile Include="Classes.cs" />
+    <Compile Include="frmBusqueda.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmBusqueda.Designer.cs">
+      <DependentUpon>frmBusqueda.cs</DependentUpon>
+    </Compile>
     <Compile Include="frmExplorer.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -63,6 +69,9 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="frmBusqueda.resx">
+      <DependentUpon>frmBusqueda.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="frmExplorer.resx">
       <DependentUpon>frmExplorer.cs</DependentUpon>
     </EmbeddedResource>
@@ -109,6 +118,15 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="icons\file_download.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="icons\cancel.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="icons\glass.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="icons\glass2.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

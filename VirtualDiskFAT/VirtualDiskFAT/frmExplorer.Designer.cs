@@ -38,6 +38,7 @@
             this.btnAgregar = new System.Windows.Forms.ToolStripButton();
             this.btnExtraer = new System.Windows.Forms.ToolStripButton();
             this.btnBorrar = new System.Windows.Forms.ToolStripButton();
+            this.btnBuscar = new System.Windows.Forms.ToolStripButton();
             this.viewGeneral = new System.Windows.Forms.ListView();
             this.Nombre = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.Fecha_Hora = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -45,6 +46,7 @@
             this.listaIconos = new System.Windows.Forms.ImageList(this.components);
             this.lstPropiedadesDisco = new System.Windows.Forms.ListBox();
             this.lblDiscoDefault = new System.Windows.Forms.Label();
+            this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
             this.toolStrip1.SuspendLayout();
@@ -59,7 +61,7 @@
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(806, 428);
+            this.panel1.Size = new System.Drawing.Size(846, 428);
             this.panel1.TabIndex = 1;
             // 
             // lblFolder
@@ -77,19 +79,21 @@
             this.panel2.Controls.Add(this.viewGeneral);
             this.panel2.Location = new System.Drawing.Point(213, 45);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(584, 375);
+            this.panel2.Size = new System.Drawing.Size(630, 375);
             this.panel2.TabIndex = 6;
             // 
             // toolStrip1
             // 
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.btnNuevaCarpeta,
+            this.toolStripButton1,
             this.btnAgregar,
             this.btnExtraer,
-            this.btnBorrar});
+            this.btnBorrar,
+            this.btnBuscar});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(584, 25);
+            this.toolStrip1.Size = new System.Drawing.Size(630, 25);
             this.toolStrip1.TabIndex = 5;
             this.toolStrip1.Text = "toolStrip1";
             // 
@@ -130,6 +134,16 @@
             this.btnBorrar.Text = "Borrar Archivo";
             this.btnBorrar.Click += new System.EventHandler(this.btnBorrar_Click);
             // 
+            // btnBuscar
+            // 
+            this.btnBuscar.Image = global::VirtualDiskFAT.Properties.Resources.glass2;
+            this.btnBuscar.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnBuscar.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnBuscar.Name = "btnBuscar";
+            this.btnBuscar.Size = new System.Drawing.Size(62, 22);
+            this.btnBuscar.Text = "Buscar";
+            this.btnBuscar.Click += new System.EventHandler(this.btnBuscar_Click);
+            // 
             // viewGeneral
             // 
             this.viewGeneral.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
@@ -139,7 +153,7 @@
             this.viewGeneral.Location = new System.Drawing.Point(3, 28);
             this.viewGeneral.MultiSelect = false;
             this.viewGeneral.Name = "viewGeneral";
-            this.viewGeneral.Size = new System.Drawing.Size(578, 344);
+            this.viewGeneral.Size = new System.Drawing.Size(624, 344);
             this.viewGeneral.SmallImageList = this.listaIconos;
             this.viewGeneral.TabIndex = 8;
             this.viewGeneral.UseCompatibleStateImageBehavior = false;
@@ -186,11 +200,20 @@
             this.lblDiscoDefault.TabIndex = 2;
             this.lblDiscoDefault.Text = "Disco:";
             // 
+            // toolStripButton1
+            // 
+            this.toolStripButton1.Image = global::VirtualDiskFAT.Properties.Resources.delete_folder;
+            this.toolStripButton1.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.toolStripButton1.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButton1.Name = "toolStripButton1";
+            this.toolStripButton1.Size = new System.Drawing.Size(103, 22);
+            this.toolStripButton1.Text = "Borrar Carpeta";
+            // 
             // frmExplorer
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(806, 428);
+            this.ClientSize = new System.Drawing.Size(846, 428);
             this.Controls.Add(this.panel1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MinimizeBox = false;
@@ -226,5 +249,7 @@
         private System.Windows.Forms.ToolStripButton btnExtraer;
         private System.Windows.Forms.ToolStripButton btnBorrar;
         private System.Windows.Forms.Label lblFolder;
+        private System.Windows.Forms.ToolStripButton btnBuscar;
+        private System.Windows.Forms.ToolStripButton toolStripButton1;
     }
 }
